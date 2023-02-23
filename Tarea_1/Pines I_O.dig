@@ -1161,10 +1161,6 @@ Guarda la información del dato.</string>
       <p2 x="300" y="-760"/>
     </wire>
     <wire>
-      <p1 x="60" y="120"/>
-      <p2 x="180" y="120"/>
-    </wire>
-    <wire>
       <p1 x="220" y="120"/>
       <p2 x="300" y="120"/>
     </wire>
