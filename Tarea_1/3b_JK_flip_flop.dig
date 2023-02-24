@@ -155,7 +155,7 @@
 En esta conexión entre flip flops, permite el control
 y permanencia de un dato durante un ciclo entero, 
 en este diseño no sucede la oscilación del flip flop 
-SR, por la interacción master(on) - slave(off) y viceversa, 
+SR, por la interacción de las salidas con las entradas, 
 permite una oscilación controlada de los datos.</string>
         </entry>
       </elementAttributes>
