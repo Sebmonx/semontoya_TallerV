@@ -1,0 +1,20 @@
+Temperature Controlled DC Fan using Microcontroller: https://www.electronicshub.org/temperature-controlled-dc-fan-using-microcontroller/
+
+Ultrasonic Rangefinder using 8051: https://www.electronicshub.org/ultrasonic-rangefinder-using-8051/
+
+
+Password Based Door Lock System using 8051 Microcontroller: https://www.electronicshub.org/password-based-door-lock-system-using-8051-microcontroller/
+
+Temperature Controlled Fan (DC Motor based with PWM): https://www.electronicshub.org/temperature-controlled-dc-fan-using-microcontroller/
+
+ 
+Auto Turn off Water Pump with Different Time Slot: 
+
+Microcontroller Based Water Level Monitoring And Control System: https://www.electronicshub.org/water-level-controller-using-8051-microcontroller/
+
+Microcontroller Based Public Garden Automation: https://www.ijsrd.com/articles/IJSRDV3I2510.pdf
+
+Read Real-time Air Quality Sensor Data From Stm32 https://www.electromaker.io/project/view/read-real-time-air-quality-sensor-data-from-stm32
+
+Weather Station Using STM32 https://www.electronicsforu.com/electronics-projects/weather-station-using-stm32
+
