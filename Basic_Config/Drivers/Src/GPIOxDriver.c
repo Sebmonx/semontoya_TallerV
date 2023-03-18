@@ -12,27 +12,27 @@ void GPIO_Config(GPIO_Handler_t *pGPIOHandler){
     //Verificamos para cada uno de los GPIOx
     if(pGPIOHandler-> pGPIOx == GPIOA){
         //Escribe 1 (SET) en la posición para GPIOA
-        RCC->AHB1ENR |= (SET << RCC_AHB1ENR_GPIOA_EN);
+        RCC->AHB1ENR |= (RCC_AHB1ENR_GPIOAEN);
     }
     else if(pGPIOHandler->pGPIOx == GPIOB){
         //Escribe 1 (SET) en la posición para GPIOA
-        RCC->AHB1ENR |= (SET << RCC_AHB1ENR_GPIOB_EN);
+        RCC->AHB1ENR |= (RCC_AHB1ENR_GPIOAEN);
     }
     else if(pGPIOHandler->pGPIOx == GPIOC){
         //Escribe 1 (SET) en la posición para GPIOA
-        RCC->AHB1ENR |= (SET << RCC_AHB1ENR_GPIOC_EN);
+        RCC->AHB1ENR |= (RCC_AHB1ENR_GPIOAEN);
     }
     else if(pGPIOHandler->pGPIOx == GPIOD){
         //Escribe 1 (SET) en la posición para GPIOA
-        RCC->AHB1ENR |= (SET << RCC_AHB1ENR_GPIOD_EN);
+        RCC->AHB1ENR |= (RCC_AHB1ENR_GPIOAEN);
     }
     else if(pGPIOHandler->pGPIOx == GPIOE){
         //Escribe 1 (SET) en la posición para GPIOA
-        RCC->AHB1ENR |= (SET << RCC_AHB1ENR_GPIOE_EN);
+        RCC->AHB1ENR |= (RCC_AHB1ENR_GPIOAEN);
     }
     else if(pGPIOHandler->pGPIOx == GPIOH){
         //Escribe 1 (SET) en la posición para GPIOA
-        RCC->AHB1ENR |= (SET << RCC_AHB1ENR_GPIOH_EN);
+        RCC->AHB1ENR |= (RCC_AHB1ENR_GPIOAEN);
     }
 
     /*INICIO DE CONFIGURACION
@@ -73,13 +73,13 @@ void GPIO_Config(GPIO_Handler_t *pGPIOHandler){
         if(pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber < 8){
             //Registro AFRL que controla PIN_0 a PIN_7
             auxPosition = 4 * pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber;
-            pGPIOHandler->pGPIOx->AFRL &= ~(0b111 << auxPosition); //Limpiar
-            pGPIOHandler->pGPIOx->AFRL |=  (pGPIOHandler->GPIO_PinConfig.GPIO_PinAltFunMode << auxPosition); //Escribir
+            pGPIOHandler->pGPIOx->AFR[0] &= ~(0b111 << auxPosition); //Limpiar
+            pGPIOHandler->pGPIOx->AFR[0] |=  (pGPIOHandler->GPIO_PinConfig.GPIO_PinAltFunMode << auxPosition); //Escribir
         } else {
         //Registro AFRH, para PIN_8 a PIN_15
         auxPosition = 4 * (pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber -8);
-        pGPIOHandler->pGPIOx->AFRH &= ~(0b111 << auxPosition); //Limpiar
-        pGPIOHandler->pGPIOx->AFRH |=  (pGPIOHandler->GPIO_PinConfig.GPIO_PinAltFunMode << auxPosition); //Escribir
+        pGPIOHandler->pGPIOx->AFR[1] &= ~(0b111 << auxPosition); //Limpiar
+        pGPIOHandler->pGPIOx->AFR[1]|=  (pGPIOHandler->GPIO_PinConfig.GPIO_PinAltFunMode << auxPosition); //Escribir
         }
     }
 }
@@ -101,11 +101,7 @@ uint32_t GPIO_ReadPin(GPIO_Handler_t * pPinHandler){
 
 void GPIOxTooglePin(GPIO_Handler_t *pPinHandler){
 
-	if(pPinHandler->GPIO_PinConfig.GPIO_PinPuPdControl == GPIO_PIN_SET){
-		pPinHandler->pGPIOx->BSRR &= (GPIO_PIN_RESET << pPinHandler->GPIO_PinConfig.GPIO_PinNumber);
-	} else {
-		pPinHandler->pGPIOx->BSRR |= (GPIO_PIN_SET << pPinHandler->GPIO_PinConfig.GPIO_PinNumber);
-	}
+
 	/**Encender o apagar el periferico puede ser
 	 * apagar o encender la señal de reloj (esto no modifica el valor del óutput, no sirve)
 	 * ¿cambiar de input a output? (es un cambio extremo que igual no cambia el valor)

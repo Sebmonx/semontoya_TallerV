@@ -7,6 +7,7 @@
  **/
 
 #include <stdint.h>
+#include "GPIOxDriver.h"
 
 
 int main(void)
@@ -31,8 +32,15 @@ int main(void)
 			//Modifica pin para encender
 			GPIO_WritePin(&handlerUserLedPin, SET);
 
+			GPIO_ReadPin(&handlerUserLedPin);
+			handlerUserLedPin.GPIO_PinConfig.GPIO_PinNumber = PIN_6;
+			GPIO_ReadPin(&handlerUserLedPin);
+			handlerUserLedPin.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
+			GPIO_ReadPin(&handlerUserLedPin);
+
 			while(1){
-				NOP();
+				GPIOxTooglePin1Segundo(&handlerUserLedPin);
 			}
+
 	}
 }
