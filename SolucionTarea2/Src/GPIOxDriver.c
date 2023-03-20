@@ -95,30 +95,42 @@ void GPIO_WritePin(GPIO_Handler_t * pPinHandler, uint8_t newState){
 
 uint32_t GPIO_ReadPin(GPIO_Handler_t * pPinHandler){
     uint32_t pinValue = 0; //Variable auxiliar
-    pinValue = (pPinHandler->pGPIOx->IDR >> pPinHandler->GPIO_PinConfig.GPIO_PinNumber); //Lectura en posicion requerida
+
+    // Se mueve el valor del registro en el pin al inicio y se guarda en la variable
+    pinValue = (pPinHandler->pGPIOx->IDR >> pPinHandler ->GPIO_PinConfig.GPIO_PinNumber);
+
+    /* La variable solamente estaba guardando el mismo valor del registro despues de hacer
+     * la operacion bitwise (que desecha ciertos valores al realizar el movimiento) y como
+     * lo que realmente interesa es si el bit que quedo de primero vale 0 o 1, se utiliza una
+     * mascara en bit0 para conocer el valor*/
+    pinValue &= 0b1;
     return pinValue;
 }
 
 void GPIOxTooglePin(GPIO_Handler_t *pPinHandler){
 
+	// Utilizacion de XOR
 	pPinHandler->pGPIOx->ODR ^= (SET << pPinHandler->GPIO_PinConfig.GPIO_PinNumber);
 
-	/**Encender o apagar el periferico puede ser
+	/** Comentario no util, analisis propio
+	 * Encender o apagar el periferico puede ser
 	 * apagar o encender la señal de reloj (esto no modifica el valor del óutput, no sirve)
 	 * ¿cambiar de input a output? (es un cambio extremo que igual no cambia el valor)
 	 * ¿enviar a pull up o pull down? (no es)
 	 * si es output cambiar la salida, es decir modificar el output register
-	 *
-	**/
+	 **/
 }
 
 void GPIOxTooglePin1Segundo(GPIO_Handler_t *pPinHandler){
-	// Delay de 1 segundo
+	// Delay de 1 segundo ocupando el microcontrolador multiples ciclos
 	for(uint32_t i = 0; i < 1250000; i++){
 		NOP();
 	}
 	// Encendido o apagado de PIN
 	pPinHandler->pGPIOx->ODR ^= (SET << pPinHandler->GPIO_PinConfig.GPIO_PinNumber);
 }
+
+
+
 
 
