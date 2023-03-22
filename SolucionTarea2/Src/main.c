@@ -136,7 +136,9 @@ int main(void)
 	GPIO_Config(&handlerPA7);
 	GPIO_WritePin(&handlerPA7, SET);
 
-	//Arreglo de Pines en orden de bits
+	/*	Arreglo de Pines en orden de bits
+		Puede ser un arreglo de 7 elementos, a menos que sea un string no necesita
+	 	el espacio extra para el caracter NULL*/
 	GPIO_Handler_t bits[8] = {handlerPA7, handlerPC8, handlerPC7, handlerPA6,
 								handlerPB8, handlerPC6, handlerPC9};
 
