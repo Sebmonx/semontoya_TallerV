@@ -52,7 +52,7 @@ void GPIO_Config(GPIO_Handler_t *pGPIOHandler){
     auxConfig = (pGPIOHandler-> GPIO_PinConfig.GPIO_PinOType << pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber);
 
     //Limpiar
-    pGPIOHandler-> pGPIOx-> OTYPER &= ~(SET << pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber);
+    pGPIOHandler-> pGPIOx-> OTYPER &= ~(/*SET*/ 0b1 << pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber);
 
     //Cargar la config al OTYPER
     pGPIOHandler-> pGPIOx-> OTYPER |= auxConfig;
@@ -68,7 +68,7 @@ void GPIO_Config(GPIO_Handler_t *pGPIOHandler){
     pGPIOHandler->pGPIOx->PUPDR |= auxConfig;
 
     //6. CONFIGURAR FUNCIONES ALTERNATIVAS
-    if(pGPIOHandler->GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_ALTFN){
+    if(pGPIOHandler->GPIO_PinConfig.GPIO_PinMode == 2 /*GPIO_MODE_ALTFN*/){
 
         if(pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber < 8){
             //Registro AFRL que controla PIN_0 a PIN_7
@@ -85,10 +85,10 @@ void GPIO_Config(GPIO_Handler_t *pGPIOHandler){
 }
 
 void GPIO_WritePin(GPIO_Handler_t * pPinHandler, uint8_t newState){
-    if(newState == SET){
-        pPinHandler->pGPIOx->BSRR |= (SET << pPinHandler->GPIO_PinConfig.GPIO_PinNumber);
+    if(newState == /*SET*/ 0b1){
+        pPinHandler->pGPIOx->BSRR |= (/*SET*/ 0b1 << pPinHandler->GPIO_PinConfig.GPIO_PinNumber);
     } else {
-        pPinHandler->pGPIOx->BSRR |= (SET << (pPinHandler->GPIO_PinConfig.GPIO_PinNumber + 16));
+        pPinHandler->pGPIOx->BSRR |= (/*SET*/ 0b1 << (pPinHandler->GPIO_PinConfig.GPIO_PinNumber + 16));
     }
 
 }

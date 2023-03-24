@@ -1,4 +1,6 @@
-#include "GPIOxDriver.h"
+#include <GPIOxDriver.h>
+#define SET 1
+#define RESET 0
 
 /*Se está creando una función que permita ir paso a paso sobre las configuraciones de los perifericos
 en el orden necesario para culminar en un cambio de comportamiento en el periférico.*/
@@ -68,7 +70,7 @@ void GPIO_Config(GPIO_Handler_t *pGPIOHandler){
     pGPIOHandler->pGPIOx->PUPDR |= auxConfig;
 
     //6. CONFIGURAR FUNCIONES ALTERNATIVAS
-    if(pGPIOHandler->GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_ALTFN){
+    if(pGPIOHandler->GPIO_PinConfig.GPIO_PinMode == 2){
 
         if(pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber < 8){
             //Registro AFRL que controla PIN_0 a PIN_7

@@ -5,8 +5,8 @@
  *      Author: semontoya
  */
 
-#ifndef INC_GPIOXDRIVER_H_
-#define INC_GPIOXDRIVER_H_
+#ifndef _GPIOXDRIVER_H_
+#define _GPIOXDRIVER_H_
 
 #include <stm32f4xx.h>
 
@@ -81,15 +81,22 @@ typedef struct{
 
 typedef struct
 {
-    GPIO_TypeDef      *pGPIOx;        // Dirección del puerto para pin
+	GPIO_TypeDef	    *pGPIOx;        // Dirección del puerto para pin
     GPIO_PinConfig_t   	GPIO_PinConfig; // Config Pin
 } GPIO_Handler_t;
 
 
-// Definición de cabeceras de funciones
+// Definición de cabeceras de funciones driver principal
 void GPIO_Config(GPIO_Handler_t *pGPIOHandler);
 void GPIO_WritePin(GPIO_Handler_t *pPinHandler, uint8_t newState);
 uint32_t GPIO_ReadPin(GPIO_Handler_t *pPinHandler);
 void GPIOxTooglePin(GPIO_Handler_t *pPinHandler);
+void GPIOxTooglePin1Segundo(GPIO_Handler_t *pPinHandler);
+
+
+
+
+// Definicion cabecera de funciones para contador
+
 
 #endif /* INC_GPIOXDRIVER_H_*/

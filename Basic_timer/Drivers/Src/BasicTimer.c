@@ -31,8 +31,8 @@ TIM_TypeDef	*ptrTimerUsed;
 void BasicTimer_Config(BasicTimer_Handler_t *ptrBTimerHandler){
 	// Guardamos una referencia al periferico que estamos utilizando...
 	ptrTimerUsed = ptrBTimerHandler->ptrTIMx;
-	auxVar = 0;
-	auxPos = 0;
+	uint8_t auxVar = 0;
+	uint8_t auxPos = 0;
 
 	/* 0. Desactivamos las interrupciones globales mientras configuramos el sistema.*/
 	__disable_irq();
@@ -124,6 +124,15 @@ void TIM2_IRQHandler(void){
 	ptrTimerUsed->SR &= ~TIM_SR_UIF;
 
 	/* LLamamos a la función que se debe encargar de hacer algo con esta interrupción*/
-	BasicTimer_Callback();
+	void BasicTimer2_Callback(void);
+
+}
+
+void TIM3_IRQHandler(void){
+	/* Limpiamos la bandera que indica que la interrupción se ha generado */
+	ptrTimerUsed->SR &= ~TIM_SR_UIF;
+
+	/* LLamamos a la función que se debe encargar de hacer algo con esta interrupción*/
+	void BasicTimer3_Callback(void);
 
 }
