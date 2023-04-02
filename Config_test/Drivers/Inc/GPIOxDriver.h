@@ -5,8 +5,8 @@
  *      Author: semontoya
  */
 
-#ifndef _GPIOXDRIVER_H_
-#define _GPIOXDRIVER_H_
+#ifndef INC_GPIOXDRIVER_H_
+#define INC_GPIOXDRIVER_H_
 
 #include <stm32f4xx.h>
 
