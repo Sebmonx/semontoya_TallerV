@@ -5,10 +5,10 @@
  *      Author: semontoya
  */
 
-#ifndef _GPIOXDRIVER_H_
-#define _GPIOXDRIVER_H_
+#ifndef INC_GPIOXDRIVER_H_
+#define INC_GPIOXDRIVER_H_
 
-#include <stm32f411xx_hal.h>
+#include <stm32f4xx.h>
 
 /*Valores estandar para las configuraciones*/
 /*GPIOx_MODER dos bit por PIN*/

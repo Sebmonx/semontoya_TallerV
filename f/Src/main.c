@@ -5,8 +5,8 @@
  * @brief          : Taller 5
  ******************************************************************************
  **/
-#include <stm32f4xx.h>
 #include <stdint.h>
+#include <stm32f4xx.h>
 #include "GPIOxDriver.h"
 #include "BasicTimer.h"
 #include "ExtiDriver.h"
@@ -19,11 +19,11 @@
 	/* Handlers de GPIO display */
 	GPIO_Handler_t handPA8 = {0};
 	GPIO_Handler_t handPB10 = {0};
-	GPIO_Handler_t handPB4 = {0};
+	GPIO_Handler_t handPC4 = {0};
 	GPIO_Handler_t handPB5 = {0};
 	GPIO_Handler_t handPB3 = {0};
-	GPIO_Handler_t handPA10 = {0};
-	GPIO_Handler_t handPA2 = {0};
+	GPIO_Handler_t handPA7 = {0};
+	GPIO_Handler_t handPA9 = {0};
 
 	/* Arreglo para encendido de LEDs 7 segmentos */
 	GPIO_Handler_t bits_7Seg[7] = {0};
@@ -59,11 +59,11 @@ int main(void)
 	init_Display();
 	GPIO_WritePin(&handPA8, SET);
 	GPIO_WritePin(&handPB10, SET);
-	GPIO_WritePin(&handPB4, SET);
+	GPIO_WritePin(&handPC4, SET);
 	GPIO_WritePin(&handPB5, SET);
 	GPIO_WritePin(&handPB3, SET);
 	GPIO_WritePin(&handPA10, SET);
-	GPIO_WritePin(&handPA2, SET);
+	GPIO_WritePin(&handPA9, SET);
 
 	init_Encoder();
 	numero_7Segmentos(numero);
@@ -77,6 +77,7 @@ int main(void)
 			culebrita(numero,pos_snake);
 		}
 	}
+	return 0;
 }
 
 /* Inicializacion de hardware micro */
@@ -85,8 +86,8 @@ void init_Hardware(void){
 	// Timer para LED de estado usando el LED2
 	timerLED2.ptrTIMx = TIM2;
 	timerLED2.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
-	timerLED2.TIMx_Config.TIMx_period = 250; // Tiempo en milisegundos
 	timerLED2.TIMx_Config.TIMx_speed = BTIMER_SPEED_1ms;
+	timerLED2.TIMx_Config.TIMx_period = 300; // Tiempo en milisegundos
 	timerLED2.TIMx_Config.TIMx_interruptEnable = 1; // Activar interrupción
 	BasicTimer_Config(&timerLED2);
 
@@ -101,6 +102,7 @@ void init_Hardware(void){
 }
 
 
+
 /* Inicialización de los pines a utilizar en el display */
 void init_Display(void){
 
@@ -112,6 +114,7 @@ void init_Display(void){
 	handPA8.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
 	handPA8.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
 	GPIO_Config(&handPA8);
+	GPIO_WritePin(&handPA8, SET);
 
 	handPB10.pGPIOx = GPIOB;
 	handPB10.GPIO_PinConfig.GPIO_PinNumber 			= PIN_10;
@@ -120,14 +123,16 @@ void init_Display(void){
 	handPB10.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
 	handPB10.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
 	GPIO_Config(&handPB10);
+	GPIO_WritePin(&handPB10, SET);
 
-	handPB4.pGPIOx = GPIOB;
-	handPB4.GPIO_PinConfig.GPIO_PinNumber 		= PIN_4;
-	handPB4.GPIO_PinConfig.GPIO_PinMode 		= GPIO_MODE_OUT;
-	handPB4.GPIO_PinConfig.GPIO_PinOType 		= GPIO_OTYPE_PUSHPULL;
-	handPB4.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
-	handPB4.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
-	GPIO_Config(&handPB4);
+	handPC4.pGPIOx = GPIOC;
+	handPC4.GPIO_PinConfig.GPIO_PinNumber 		= PIN_4;
+	handPC4.GPIO_PinConfig.GPIO_PinMode 		= GPIO_MODE_OUT;
+	handPC4.GPIO_PinConfig.GPIO_PinOType 		= GPIO_OTYPE_PUSHPULL;
+	handPC4.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
+	handPC4.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
+	GPIO_Config(&handPC4);
+	GPIO_WritePin(&handPC4, SET);
 
 	handPB5.pGPIOx = GPIOB;
 	handPB5.GPIO_PinConfig.GPIO_PinNumber 		= PIN_5;
@@ -136,6 +141,7 @@ void init_Display(void){
 	handPB5.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
 	handPB5.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
 	GPIO_Config(&handPB5);
+	GPIO_WritePin(&handPB5, SET);
 
 	handPB3.pGPIOx = GPIOB;
 	handPB3.GPIO_PinConfig.GPIO_PinNumber 		= PIN_3;
@@ -144,27 +150,30 @@ void init_Display(void){
 	handPB3.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
 	handPB3.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
 	GPIO_Config(&handPB3);
+	GPIO_WritePin(&handPB3, SET);
 
-	handPA10.pGPIOx = GPIOA;
-	handPA10.GPIO_PinConfig.GPIO_PinNumber 			= PIN_10;
-	handPA10.GPIO_PinConfig.GPIO_PinMode 			= GPIO_MODE_OUT;
-	handPA10.GPIO_PinConfig.GPIO_PinOType 			= GPIO_OTYPE_PUSHPULL;
-	handPA10.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
-	handPA10.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
-	GPIO_Config(&handPA10);
+	handPA7.pGPIOx = GPIOA;
+	handPA7.GPIO_PinConfig.GPIO_PinNumber 			= PIN_7;
+	handPA7.GPIO_PinConfig.GPIO_PinMode 			= GPIO_MODE_OUT;
+	handPA7.GPIO_PinConfig.GPIO_PinOType 			= GPIO_OTYPE_PUSHPULL;
+	handPA7.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
+	handPA7.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
+	GPIO_Config(&handPA7);
+	GPIO_WritePin(&handPA7, SET);
 
-	handPA2.pGPIOx = GPIOA;
-	handPA2.GPIO_PinConfig.GPIO_PinNumber 		= PIN_2;
-	handPA2.GPIO_PinConfig.GPIO_PinMode 		= GPIO_MODE_OUT;
-	handPA2.GPIO_PinConfig.GPIO_PinOType 		= GPIO_OTYPE_PUSHPULL;
-	handPA2.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
-	handPA2.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
-	GPIO_Config(&handPA2);
+	handPA9.pGPIOx = GPIOA;
+	handPA9.GPIO_PinConfig.GPIO_PinNumber 		= PIN_9;
+	handPA9.GPIO_PinConfig.GPIO_PinMode 		= GPIO_MODE_OUT;
+	handPA9.GPIO_PinConfig.GPIO_PinOType 		= GPIO_OTYPE_PUSHPULL;
+	handPA9.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
+	handPA9.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
+	GPIO_Config(&handPA9);
+	GPIO_WritePin(&handPA9, SET);
 
 	/* Timer */
 	timerDisplay.ptrTIMx = TIM3;
 	timerDisplay.TIMx_Config.TIMx_mode				= BTIMER_MODE_UP;
-	timerDisplay.TIMx_Config.TIMx_period			= 30; // Tiempo en milisegundos
+	timerDisplay.TIMx_Config.TIMx_period			= 300; // Tiempo en milisegundos
 	timerDisplay.TIMx_Config.TIMx_speed 			= BTIMER_SPEED_1ms;
 	timerDisplay.TIMx_Config.TIMx_interruptEnable 	= 1; // Activar interrupción
 	BasicTimer_Config(&timerDisplay);
@@ -172,8 +181,8 @@ void init_Display(void){
 	/*todo Organizar los pines en el arreglo con orden adecuado según display*/
 
 	/* Transistores */
-	tranUni.pGPIOx = GPIOB;
-	tranUni.GPIO_PinConfig.GPIO_PinNumber 		= PIN_6;
+	tranUni.pGPIOx = GPIOA;
+	tranUni.GPIO_PinConfig.GPIO_PinNumber 		= PIN_10;
 	tranUni.GPIO_PinConfig.GPIO_PinMode 		= GPIO_MODE_OUT;
 	tranUni.GPIO_PinConfig.GPIO_PinOType 		= GPIO_OTYPE_PUSHPULL;
 	tranUni.GPIO_PinConfig.GPIO_PinPuPdControl 	= GPIO_PUPDR_NOTHING;
@@ -181,7 +190,7 @@ void init_Display(void){
 	GPIO_Config(&tranUni);
 	GPIO_WritePin(&tranUni, SET);
 
-	tranDec.pGPIOx = GPIOC;
+	tranDec.pGPIOx = GPIOA;
 	tranDec.GPIO_PinConfig.GPIO_PinNumber 		= PIN_7;
 	tranDec.GPIO_PinConfig.GPIO_PinMode 		= GPIO_MODE_OUT;
 	tranDec.GPIO_PinConfig.GPIO_PinOType 		= GPIO_OTYPE_PUSHPULL;
@@ -189,6 +198,7 @@ void init_Display(void){
 	tranDec.GPIO_PinConfig.GPIO_PinAltFunMode  	= AF0;
 	GPIO_Config(&tranDec);
 	GPIO_WritePin(&tranDec, RESET);
+
 
 }
 
@@ -199,15 +209,15 @@ void init_Encoder(void){
 
 	// Señal del encoder que dirigirá la interrupción EXTI11
 	encodCLK.edgeType = EXTERNAL_INTERRUPT_FALLING_EDGE;
-	encodCLK.pGPIOHandler->pGPIOx = GPIOA;
-	encodCLK.pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber = PIN_11;
+	encodCLK.pGPIOHandler->pGPIOx = GPIOB;
+	encodCLK.pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber = PIN_1;
 	encodCLK.pGPIOHandler->GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IN;
 	encodCLK.pGPIOHandler->GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
 	extInt_Config(&encodCLK);
 
 	// Señal del encoder que determinará la dirección del movimiento
-	encodDT.pGPIOx = GPIOA;
-	encodDT.GPIO_PinConfig.GPIO_PinNumber = PIN_12;
+	encodDT.pGPIOx = GPIOB;
+	encodDT.GPIO_PinConfig.GPIO_PinNumber = PIN_15;
 	encodDT.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IN;
 	encodDT.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
 	GPIO_Config(&encodDT);
@@ -215,7 +225,7 @@ void init_Encoder(void){
 	// Señal de encoder que lidera la interrupción EXTI12 de cambio de función
 	encodSW.edgeType = EXTERNAL_INTERRUPT_FALLING_EDGE;
 	encodSW.pGPIOHandler->pGPIOx = GPIOB;
-	encodSW.pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber = PIN_12;
+	encodSW.pGPIOHandler->GPIO_PinConfig.GPIO_PinNumber = PIN_14;
 	encodSW.pGPIOHandler->GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IN;
 	encodSW.pGPIOHandler->GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
 	extInt_Config(&encodSW);
@@ -224,12 +234,12 @@ void init_Encoder(void){
 
 
 /* Centelleo de LED de estado */
-void BasicTimer2_CallBack(void){
+void BasicTimer2_Callback(void){
 	GPIOxTooglePin(&handLED2);
 }
 
 /* Alternar encendido de transistores */
-void BasicTimer3_CallBack(void){
+void BasicTimer3_Callback(void){
 	GPIOxTooglePin(&tranUni);
 	GPIOxTooglePin(&tranDec);
 }

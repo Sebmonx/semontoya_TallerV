@@ -141,7 +141,7 @@ typedef struct{
 	volatile uint32_t LCKR;			//PORT CONFIG LOCK
 	volatile uint32_t AFRL; 		//ALTERNATE FUNCTION LOW
 	volatile uint32_t AFRH;			//ALTERNATE FUNCTION HIGH
-}GPIOx_RegDef_t;
+}GPIO_TypeDef_t;
 
 /*Puntero que dirige la direccion de memoria a la estructura que define GPIOx
  * definiendo varias veces para cada GPIO existente*/

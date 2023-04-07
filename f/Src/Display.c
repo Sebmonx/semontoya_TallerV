@@ -58,7 +58,7 @@ uint8_t numero_7Segmentos(uint8_t numero){
 			break;
 		}
 		case 9:{
-			bin = 0b1001111;
+			bin = 0b1101111;
 			break;
 		}
 		default:{
