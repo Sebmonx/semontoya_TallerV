@@ -37,7 +37,7 @@
 /* Variables genericas */
 	BasicTimer_Handler_t timerLED2 = {0};
 	GPIO_Handler_t handLED2 = {0};
-	uint8_t numero = 50;
+	uint8_t numero = 0;
 	uint8_t decena = 0;
 	uint8_t unidad = 0;
 	uint8_t snake = 0;
@@ -63,7 +63,7 @@ void culebrita(uint8_t snake, GPIO_Handler_t pos_Snake[12]);
 
 int main(void){
 	cont = 0;
-	modo = 1;
+	modo = 0;
 	init_Hardware();
 
 	while(1){
@@ -284,6 +284,8 @@ void init_Hardware(void){
 		GPIO_Config(&encodDT);
 
 		// GPIO para botón del encoder que determinará cambio de función
+		/* No funciona la interacción con el switch, si se retira esta condicion individualmente
+		 * la culebra y los numeros funcionan*/
 		encodSW.pGPIOx = GPIOB;
 		encodSW.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
 		encodSW.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IN;
