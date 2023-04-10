@@ -44,6 +44,7 @@
 	uint8_t modo = 0;
 	uint8_t banderaClock = 0;
 	uint8_t banderaSwitch = 0;
+	uint8_t cont = 0;
 
 /* Variables Encoder */
 	GPIO_Handler_t encodCLK = {0};		// Pin para clock de encoder
@@ -61,8 +62,8 @@ void culebrita(uint8_t snake, GPIO_Handler_t pos_Snake[12]);
 
 
 int main(void){
-
-	modo = 0;
+	cont = 0;
+	modo = 1;
 	init_Hardware();
 
 	while(1){
@@ -70,12 +71,13 @@ int main(void){
 		/* Función para cambiar el modo de ejecución en el display
 		 * utiliza una variable que cambia cada que se presione el
 		 * botón del encoder */
-		if(banderaSwitch){
-			GPIO_WritePin(&bit6, RESET); // Apagado de led g que no se encuentra en el arreglo snake
+
+		if(banderaSwitch == 1){
 			modo = 1;			// modo = 0 para números y modo = 1 para culebrita
-		} else {
+		} else if (banderaSwitch == 0){
 			modo = 0;
 		}
+
 
 		if(modo == 0){
 			/* Función para realizar incremento o decremento del valor que irá
@@ -97,10 +99,10 @@ int main(void){
 				}
 			}
 		} else if (modo == 1){
-
+			GPIO_WritePin(&bit6, RESET); // Apagado de led g que no se encuentra en el arreglo snake
 			/* Función que mueve la culebrita en uno u otro sentido dependiendo
 			 * de la señal recibida en el pin del encod DT */
-			if(GPIO_ReadPin(&encodDT) == 1 && banderaClock){		// Dirección 1
+			if(banderaClock == 1 && GPIO_ReadPin(&encodDT) == 1){		// Dirección 1
 				if(snake == 11){			// Limitante 12 para regresar a primera posición
 					snake = 0;
 					banderaClock = 0;		// Bajar bandera
@@ -108,7 +110,7 @@ int main(void){
 					snake++;				// Incremento
 					banderaClock = 0;		// Bajar bandera
 				}
-			} else if(!GPIO_ReadPin(&encodDT) == 0 && banderaClock){// Dirección 2
+			} else if(banderaClock == 1 && GPIO_ReadPin(&encodDT) == 0){// Dirección 2
 
 				if(snake == 0){			// Limitante 0 para saltar a posición 12
 					snake = 11;
@@ -287,12 +289,10 @@ void init_Hardware(void){
 		encodSW.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IN;
 		encodSW.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
 
-		// EXTI para interrupción realizada por el botón del encoder
-		exti_encodSW.edgeType = EXTERNAL_INTERRUPT_FALLING_EDGE;
+		 //EXTI para interrupción realizada por el botón del encoder
+		exti_encodSW.edgeType = EXTERNAL_INTERRUPT_RISING_EDGE;
 		exti_encodSW.pGPIOHandler = &encodSW;
 		extInt_Config(&exti_encodSW);
-
-
 }
 
 
@@ -381,7 +381,8 @@ void BasicTimer3_Callback(void){
 			GPIOxTooglePin(&tranDec);
 			GPIOxTooglePin(&tranUni);
 		}
-	}	else{
+	}
+	else if(modo == 1){
 		culebrita(snake, pos_snake);
 	}
 }
@@ -489,6 +490,9 @@ void culebrita(uint8_t snake, GPIO_Handler_t pos_Snake[12]){
 		GPIO_WritePin(&pos_Snake[11], SET);
 		break;
 	}
+	default:{
+		__NOP();
+	}
 	}
 }
 
@@ -520,8 +524,14 @@ void giro_Numero(uint8_t numero, GPIO_Handler_t senal_Dir, uint8_t banderaClock)
 }
 
 /* Modo de funcion en programa*/
-void callback_extInt5(void){
-	banderaSwitch ^= 0b1;
+void callback_extInt4(void){
+	if(banderaSwitch == 1){
+		banderaSwitch = 0;
+	}
+	else if(banderaSwitch == 0){
+		banderaSwitch = 1;
+	}
+	cont++;
 }
 
 
