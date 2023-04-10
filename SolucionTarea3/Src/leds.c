@@ -9,8 +9,7 @@
 #include "GPIOxDriver.h"
 #include "BasicTimer.h"
 #include "ExtiDriver.h"
-#include "Display.h"
-#include "Encoder.h"
+
 
 
 /* Variables Display */
@@ -38,11 +37,13 @@
 /* Variables genericas */
 	BasicTimer_Handler_t timerLED2 = {0};
 	GPIO_Handler_t handLED2 = {0};
-	uint8_t numero = 0;
+	uint8_t numero = 50;
 	uint8_t decena = 0;
 	uint8_t unidad = 0;
 	uint8_t snake = 0;
 	uint8_t modo = 0;
+	uint8_t banderaClock = 0;
+	uint8_t banderaSwitch = 0;
 
 /* Variables Encoder */
 	GPIO_Handler_t encodCLK = {0};		// Pin para clock de encoder
@@ -53,14 +54,71 @@
 
 
 void init_Hardware(void);
+uint8_t numero_7Segmentos(uint8_t numero);
+void numero_Display(uint8_t numero, GPIO_Handler_t bits[7]);
+void culebrita(uint8_t snake, GPIO_Handler_t pos_Snake[12]);
 
 
 
 int main(void){
 
+	modo = 0;
 	init_Hardware();
 
 	while(1){
+
+		/* Función para cambiar el modo de ejecución en el display
+		 * utiliza una variable que cambia cada que se presione el
+		 * botón del encoder */
+		if(banderaSwitch){
+			GPIO_WritePin(&bit6, RESET); // Apagado de led g que no se encuentra en el arreglo snake
+			modo = 1;			// modo = 0 para números y modo = 1 para culebrita
+		} else {
+			modo = 0;
+		}
+
+		if(modo == 0){
+			/* Función para realizar incremento o decremento del valor que irá
+			 * al display restringido entre 0 y 99 leyendo el pin encodDT para
+			 * decidir la dirección*/
+			if(GPIO_ReadPin(&encodDT) == 1 && banderaClock){		// Dirección
+				if(numero == 99){			// Limitante 99
+					banderaClock = 0;		// Bajar bandera
+				} else {
+					numero++;				// Incremento
+					banderaClock = 0;		// Bajar bandera
+				}
+			} else if(!GPIO_ReadPin(&encodDT) == 0 && banderaClock){
+				if(numero == 0){			// Limitante 0
+					banderaClock = 0;		// Bajar bandera
+				} else {
+					numero--;				// Decremento
+					banderaClock = 0;		// Bajar bandera
+				}
+			}
+		} else if (modo == 1){
+
+			/* Función que mueve la culebrita en uno u otro sentido dependiendo
+			 * de la señal recibida en el pin del encod DT */
+			if(GPIO_ReadPin(&encodDT) == 1 && banderaClock){		// Dirección 1
+				if(snake == 11){			// Limitante 12 para regresar a primera posición
+					snake = 0;
+					banderaClock = 0;		// Bajar bandera
+				} else {
+					snake++;				// Incremento
+					banderaClock = 0;		// Bajar bandera
+				}
+			} else if(!GPIO_ReadPin(&encodDT) == 0 && banderaClock){// Dirección 2
+
+				if(snake == 0){			// Limitante 0 para saltar a posición 12
+					snake = 11;
+					banderaClock = 0;		// Bajar bandera
+				} else {
+					snake--;				// Decremento
+					banderaClock = 0;		// Bajar bandera
+				}
+			}
+		}
 
 	}
 	return 0;
@@ -161,7 +219,7 @@ void init_Hardware(void){
 	GPIO_Config(&tranDec);
 	GPIO_WritePin(&tranDec, RESET);
 
-	/* Definicion de posiciones en arreglo para 7 segmentos */
+	/* Definicion de posiciones en arreglo para números en 7 segmentos */
 	bits_7Seg[0] = bit0;
 	bits_7Seg[1] = bit1;
 	bits_7Seg[2] = bit2;
@@ -169,6 +227,21 @@ void init_Hardware(void){
 	bits_7Seg[4] = bit4;
 	bits_7Seg[5] = bit5;
 	bits_7Seg[6] = bit6;
+
+	/* Definicion de posiciones en arreglo para culebrita en 7 segmentos */
+	pos_snake[0] = bit0;
+	pos_snake[1] = bit0;
+	pos_snake[2] = bit5;
+	pos_snake[3] = bit4;
+	pos_snake[4] = bit3;
+	pos_snake[5] = bit4;
+	pos_snake[6] = bit5;
+	pos_snake[7] = bit1;
+	pos_snake[8] = bit2;
+	pos_snake[9] = bit3;
+	pos_snake[10] = bit2;
+	pos_snake[11] = bit1;
+
 
 	// Timer para LED de estado usando el LED2
 	timerLED2.ptrTIMx = TIM2;
@@ -190,10 +263,9 @@ void init_Hardware(void){
 
 /* Inicialización de los pines asociados a las señales entregadas
  * por el encoder */
-
 		// GPIO para clock de encoder
-		encodCLK.pGPIOx = GPIOB;
-		encodCLK.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
+		encodCLK.pGPIOx = GPIOA;
+		encodCLK.GPIO_PinConfig.GPIO_PinNumber = PIN_10;
 		encodCLK.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IN;
 		encodCLK.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
 
@@ -210,15 +282,17 @@ void init_Hardware(void){
 		GPIO_Config(&encodDT);
 
 		// GPIO para botón del encoder que determinará cambio de función
-		encodSW.pGPIOx = GPIOA;
-		encodSW.GPIO_PinConfig.GPIO_PinNumber = PIN_10;
+		encodSW.pGPIOx = GPIOB;
+		encodSW.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
 		encodSW.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_IN;
 		encodSW.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
 
 		// EXTI para interrupción realizada por el botón del encoder
-//		exti_encodSW.edgeType = EXTERNAL_INTERRUPT_FALLING_EDGE;
-//		exti_encodCLK.pGPIOHandler = &encodSW;
-//		extInt_Config(&exti_encodSW);
+		exti_encodSW.edgeType = EXTERNAL_INTERRUPT_FALLING_EDGE;
+		exti_encodSW.pGPIOHandler = &encodSW;
+		extInt_Config(&exti_encodSW);
+
+
 }
 
 
@@ -228,36 +302,228 @@ void BasicTimer2_Callback(void){
 	GPIOxTooglePin(&handLED2);
 }
 
+/* Función que convierte número entre 0 y 9 al
+ * binario equivalente para el display 7 segmentos
+ * Este caso es de cátodo común */
+uint8_t numero_7Segmentos(uint8_t numero){
 
-/* Alternar encendido de transistores */
-void BasicTimer3_Callback(void){
+	uint8_t bin = 0;
 
-	if(GPIO_ReadPin(&tranDec)){
-		unidad = numero%10;
-		numero_Display(unidad, bits_7Seg);
-		GPIOxTooglePin(&tranUni);
-		GPIOxTooglePin(&tranDec);
+	switch(numero){
+
+		case 0:{
+			bin = 0b0111111;
+			break;
+		}
+		case 1: {
+			bin = 0b0000110;
+			break;
+		}
+		case 2: {
+			bin = 0b1011011;
+			break;
+		}
+		case 3:{
+			bin = 0b1001111;
+			break;
+		}
+		case 4:{
+			bin = 0b1100110;
+			break;
+		}
+		case 5:{
+			bin = 0b1101101;
+			break;
+		}
+		case 6:{
+			bin = 0b1111101;
+			break;
+		}
+		case 7:{
+			bin = 0b0000111;
+			break;
+		}
+		case 8:{
+			bin = 0b1111111;
+			break;
+		}
+		case 9:{
+			bin = 0b1101111;
+			break;
+		}
+		default:{
+			__NOP();
+		}
 	}
-	else{
-		decena = numero/10;
-		numero_Display(decena, bits_7Seg);
-		GPIOxTooglePin(&tranDec);
-		GPIOxTooglePin(&tranUni);
+
+	return bin;
+
+}
+
+
+
+void BasicTimer3_Callback(void){
+	/* Condicional que ejecuta las funciones para los números o la culebrita */
+	if(modo == 0){
+		if(GPIO_ReadPin(&tranDec)){
+			unidad = numero%10;			// Variable para tomar la unidad del número
+			numero_Display(unidad, bits_7Seg);	// Enviar unidad al display
+
+			// Alternar transistores
+			GPIOxTooglePin(&tranUni);
+			GPIOxTooglePin(&tranDec);
+		}
+		else{
+			decena = numero/10;			// Variable para tomar la decena del número
+			numero_Display(decena, bits_7Seg);	// Enviar decena al display
+
+			// Alternar transistores
+			GPIOxTooglePin(&tranDec);
+			GPIOxTooglePin(&tranUni);
+		}
+	}	else{
+		culebrita(snake, pos_snake);
 	}
 }
 
+
+// Funcion para enviar digito a display
+void numero_Display(uint8_t numero, GPIO_Handler_t bits[7]){
+
+	uint8_t auxVar = numero_7Segmentos(numero); // Conversión a binario para display
+
+	for(uint8_t j = 0; j < 7; j++){		// Apagado de todos los leds
+			GPIO_WritePin(&bits[j], RESET);
+	}
+
+	for(uint8_t i = 0; i < 7; i++){
+		/* Encendido de pin asociado al bit del número en binario */
+		if(0b1 << i & auxVar){
+			GPIO_WritePin(&bits[i], SET);
+		} else {
+			__NOP();
+		}
+	}
+}
+
+
+/* Función para elegir transistor y posición del display a encender en el modo culebrita */
+void culebrita(uint8_t snake, GPIO_Handler_t pos_Snake[12]){
+
+	for(uint8_t j = 0; j < 12; j++){		// Apagado de todos los leds
+		GPIO_WritePin(&pos_Snake[j], RESET);
+	}
+
+
+	switch(snake){
+	case 0:{
+		GPIO_WritePin(&tranDec, RESET);
+		GPIO_WritePin(&tranUni, SET);
+		GPIO_WritePin(&pos_Snake[0], SET);
+		break;
+	}
+	case 1:{
+		GPIO_WritePin(&tranDec, SET);
+		GPIO_WritePin(&tranUni, RESET);
+		GPIO_WritePin(&pos_Snake[1], SET);
+		break;
+	}
+	case 2:{
+		GPIO_WritePin(&tranDec, SET);
+		GPIO_WritePin(&tranUni, RESET);
+		GPIO_WritePin(&pos_Snake[2], SET);
+		break;
+	}
+	case 3:{
+		GPIO_WritePin(&tranDec, SET);
+		GPIO_WritePin(&tranUni, RESET);
+		GPIO_WritePin(&pos_Snake[3], SET);
+		break;
+	}
+	case 4:{
+		GPIO_WritePin(&tranDec, SET);
+		GPIO_WritePin(&tranUni, RESET);
+		GPIO_WritePin(&pos_Snake[4], SET);
+		break;
+	}
+
+	case 5:{
+		GPIO_WritePin(&tranDec, RESET);
+		GPIO_WritePin(&tranUni, SET);
+		GPIO_WritePin(&pos_Snake[5], SET);
+		break;
+	}
+	case 6:{
+		GPIO_WritePin(&tranDec, RESET);
+		GPIO_WritePin(&tranUni, SET);
+		GPIO_WritePin(&pos_Snake[6], SET);
+		break;
+	}
+	case 7:{
+		GPIO_WritePin(&tranDec, SET);
+		GPIO_WritePin(&tranUni, RESET);
+		GPIO_WritePin(&pos_Snake[7], SET);
+		break;
+	}
+	case 8:{
+		GPIO_WritePin(&tranDec, SET);
+		GPIO_WritePin(&tranUni, RESET);
+		GPIO_WritePin(&pos_Snake[8], SET);
+		break;
+	}
+	case 9:{
+		GPIO_WritePin(&tranDec, RESET);
+		GPIO_WritePin(&tranUni, SET);
+		GPIO_WritePin(&pos_Snake[9], SET);
+		break;
+	}
+	case 10:{
+		GPIO_WritePin(&tranDec, RESET);
+		GPIO_WritePin(&tranUni, SET);
+		GPIO_WritePin(&pos_Snake[10], SET);
+		break;
+	}
+	case 11:{
+		GPIO_WritePin(&tranDec, RESET);
+		GPIO_WritePin(&tranUni, SET);
+		GPIO_WritePin(&pos_Snake[11], SET);
+		break;
+	}
+	}
+}
 
 /* Incremento o decremento por encoder */
-void callback_extInt5(void){
-	modo++;
-//	giro_Numero(numero, encodDT);
+void callback_extInt10(void){
+	banderaClock = 1;
 }
 
+/* Función para realizar incremento o decremento del valor que irá
+ * al display restringido entre 0 y 99 leyendo el pin encodDT para
+ * decidir la dirección*/
+void giro_Numero(uint8_t numero, GPIO_Handler_t senal_Dir, uint8_t banderaClock){
+
+	if(GPIO_ReadPin(&senal_Dir) == 1 && banderaClock){		// Dirección
+		if(numero == 99){			// Limitante 99
+			banderaClock = 0;
+		} else {
+			numero++;				// Incremento
+			banderaClock = 0;
+		}
+	} else if(!GPIO_ReadPin(&senal_Dir) == 0 && banderaClock){
+		if(numero == 0){			// Limitante 0
+			banderaClock = 0;
+		} else {
+			numero--;				// Decremento
+			banderaClock = 0;
+		}
+	}
+}
 
 /* Modo de funcion en programa*/
-//void callback_extInt10(void){
-//	cambio_modo(modo);
-//}
+void callback_extInt5(void){
+	banderaSwitch ^= 0b1;
+}
+
 
 
 
