@@ -5,8 +5,8 @@
  *      Author: semontoya
  */
 
-#ifndef INC_GPIOXDRIVER_H_
-#define INC_GPIOXDRIVER_H_
+#ifndef GPIOXDRIVER_H_
+#define GPIOXDRIVER_H_
 
 #include <stm32f4xx.h>
 
@@ -98,4 +98,4 @@ void GPIOxTooglePin(GPIO_Handler_t *pPinHandler);
 // Definicion cabecera de funciones para contador
 
 
-#endif /* INC_GPIOXDRIVER_H_*/
+#endif /* GPIOXDRIVER_H_*/

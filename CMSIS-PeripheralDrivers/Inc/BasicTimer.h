@@ -5,8 +5,8 @@
  *      Author: namontoy
  */
 
-#ifndef INC_BASICTIMER_H_
-#define INC_BASICTIMER_H_
+#ifndef BASICTIMER_H_
+#define BASICTIMER_H_
 
 #include "stm32f4xx.h"
 
@@ -41,4 +41,4 @@ void BasicTimer3_Callback(void);
 void BasicTimer4_Callback(void);
 void BasicTimer5_Callback(void);
 
-#endif /* INC_BASICTIMER_H_ */
+#endif /* BASICTIMER_H_ */
