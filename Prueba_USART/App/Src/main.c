@@ -29,18 +29,19 @@ GPIO_Handler_t blinkyLed = {0};
 
 
 void inicializacion_pines(void);
-
+void inicializacion_Led_Estado(void);
 
 int main(void)
 {
 	char dataToSend = 'd';
 	inicializacion_pines();
+	inicializacion_Led_Estado();
+
     /* Loop forever */
 	while(1){
-		for(uint8_t i = 0; i < 5; i++){
 			writeChar(&USART2_TX_handler, dataToSend);
-		}
 	}
+
 
 	return 0;
 }
@@ -52,6 +53,8 @@ void inicializacion_pines(void){
 	PinTX_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_2;
 	PinTX_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 	PinTX_handler.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
+	PinTX_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF7;
+	GPIO_Config(&PinTX_handler);
 
 	USART2_TX_handler.ptrUSARTx = USART2;
 	USART2_TX_handler.USART_Config.USART_mode = USART_MODE_TX;
@@ -59,10 +62,10 @@ void inicializacion_pines(void){
 	USART2_TX_handler.USART_Config.USART_datasize = USART_DATASIZE_8BIT;
 	USART2_TX_handler.USART_Config.USART_parity = USART_PARITY_NONE;
 	USART2_TX_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
-
+	USART_Config(&USART2_TX_handler);
 }
 
-void inicializacion_led_estado(void){
+void inicializacion_Led_Estado(void){
 	// Timer para LED de estado usando el LED2
 	timerLed.ptrTIMx = TIM2;
 	timerLed.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
