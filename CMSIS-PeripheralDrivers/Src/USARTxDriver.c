@@ -23,7 +23,7 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 	}
 	
     /* 1.2 Configuramos el USART2 */
-	else if(ptrUsartHa0ndler->ptrUSARTx){
+	else if(ptrUsartHandler->ptrUSARTx){
 		RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
 	}
     
@@ -181,14 +181,7 @@ int writeChar(USART_Handler_t *ptrUsartHandler, int dataToSend ){
 		__NOP();
 	}
 
-	for(uint8_t i = 0; i < 9; i++){
-		if((0b1<<i) & dataToSend){
-			(ptrUsartHandler->ptrUSARTx->DR << i) |= 0b1; // LSB queda a la izquierda
-		} else {
-			ptrUsartHandler->ptrUSARTx->DR << i;
-		}
-	}
-
+	ptrUsartHandler->ptrUSARTx->DR = dataToSend;
 
 	return dataToSend;
 }
