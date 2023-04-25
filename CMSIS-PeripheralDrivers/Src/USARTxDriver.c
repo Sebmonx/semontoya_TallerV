@@ -181,16 +181,14 @@ int writeChar(USART_Handler_t *ptrUsartHandler, int dataToSend ){
 		__NOP();
 	}
 
-	// Chequeo del tamaño de dato
-	if(ptrUsartHandler->ptrUSARTx->CR1 == USART_DATASIZE_8BIT){
-		ptrUsartHandler->dataInputSize = 8;
-	} else {
-		ptrUsartHandler->dataInputSize = 9;
+	for(uint8_t i = 0; i < 9; i++){
+		if((0b1<<i) & dataToSend){
+			(ptrUsartHandler->ptrUSARTx->DR << i) |= 0b1; // LSB queda a la izquierda
+		} else {
+			ptrUsartHandler->ptrUSARTx->DR << i;
+		}
 	}
 
-
-	ptrUsartHandler->ptrUSARTx->DR = dataToSend;
-	// Escriba acá su código
 
 	return dataToSend;
 }
