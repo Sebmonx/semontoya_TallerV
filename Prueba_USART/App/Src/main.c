@@ -27,6 +27,8 @@ USART_Handler_t USART2_TX_handler = {0};
 BasicTimer_Handler_t timerLed = {0};
 GPIO_Handler_t blinkyLed = {0};
 
+char mensaje[] = "Prueba uno";
+uint8_t timer = 0;
 
 void inicializacion_pines(void);
 void inicializacion_Led_Estado(void);
@@ -34,14 +36,17 @@ void inicializacion_Led_Estado(void);
 int main(void)
 {
 	char dataToSend = 'd';
+
 	inicializacion_pines();
 	inicializacion_Led_Estado();
 
     /* Loop forever */
 	while(1){
+		if(timer > 4){
 			writeChar(&USART2_TX_handler, dataToSend);
+			writeWord(&USART2_TX_handler, mensaje);
+		}
 	}
-
 
 	return 0;
 }
@@ -87,4 +92,5 @@ void inicializacion_Led_Estado(void){
 /* Centelleo de LED de estado */
 void BasicTimer2_Callback(void){
 	GPIOxTooglePin(&blinkyLed);
+	timer++;
 }

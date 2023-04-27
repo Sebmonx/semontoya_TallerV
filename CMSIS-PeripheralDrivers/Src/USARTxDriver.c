@@ -172,6 +172,12 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 	if(ptrUsartHandler->USART_Config.USART_mode != USART_MODE_DISABLE){
 		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_UE;
 	}
+
+	if(ptrUsartHandler->USART_Config->USART_enableIntRX == USART_INTERRUPT_RX_ENABLE){
+		ptrUsartHandler->ptrUSARTx->CR1
+		ptrUsartHandler->ptrUSARTx->CR1 |=
+
+	}
 }
 
 /* funcion para escribir un solo char */
@@ -184,4 +190,14 @@ int writeChar(USART_Handler_t *ptrUsartHandler, int dataToSend ){
 	ptrUsartHandler->ptrUSARTx->DR = dataToSend;
 
 	return dataToSend;
+}
+
+void writeWord(USART_Handler_t *ptrUsartHandler, char *word){
+	char dataToSend = 0;
+	int i = 0;
+	while(word[i]){
+		dataToSend = word[i];
+		writeChar(ptrUsartHandler, dataToSend);
+		i++;
+	}
 }
