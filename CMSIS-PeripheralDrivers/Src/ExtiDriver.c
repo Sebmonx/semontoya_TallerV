@@ -575,32 +575,32 @@ void extInt_Config(EXTI_Config_t *extiConfig){
 
 	case 2: {
 			/*Agregue su código acá*/
-			__NVIC_EnableIRQ(EXTI2_IRQn);
-			break;
+		__NVIC_EnableIRQ(EXTI2_IRQn);
+		break;
 	}
 
 	case 3: {
 			/*Agregue su código acá*/
-			__NVIC_EnableIRQ(EXTI3_IRQn);
-			break;
+		__NVIC_EnableIRQ(EXTI3_IRQn);
+		break;
 	}
 
 	case 4: {
 			/*Agregue su código acá*/
-			__NVIC_EnableIRQ(EXTI4_IRQn);
-			break;
+		__NVIC_EnableIRQ(EXTI4_IRQn);
+		break;
 	}
 
 	case 5: {
 			/*Agregue su código acá*/
-			__NVIC_EnableIRQ(EXTI9_5_IRQn);
-			break;
+		__NVIC_EnableIRQ(EXTI9_5_IRQn);
+		break;
 	}
 
 	case 6: {
 			/*Agregue su código acá*/
-			__NVIC_EnableIRQ(EXTI9_5_IRQn);
-			break;
+		__NVIC_EnableIRQ(EXTI9_5_IRQn);
+		break;
 	}
 
 	case 7: {
@@ -684,7 +684,6 @@ __attribute__ ((weak)) void callback_extInt1(void){
 	__NOP();
 
 }
-
 
 __attribute__ ((weak)) void callback_extInt2(void){
 	__NOP();

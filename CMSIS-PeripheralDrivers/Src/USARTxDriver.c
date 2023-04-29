@@ -173,12 +173,80 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_UE;
 	}
 
-	if(ptrUsartHandler->USART_Config->USART_enableIntRX == USART_INTERRUPT_RX_ENABLE){
-		ptrUsartHandler->ptrUSARTx->CR1
-		ptrUsartHandler->ptrUSARTx->CR1 |=
+	// Desactivar interrupciones globales
+	__disable_irq();
 
+	// Chequeo de activación de interrupción en recepción
+	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_RX_ENABLE){
+		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
+		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_RXNEIE;
+	} else {
+		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
+	}
+
+
+	if(ptrUsartHandler->ptrUSARTx == USART1){
+		__NVIC_EnableIRQ(USART1_IRQn);
+	}
+	else if (ptrUsartHandler->ptrUSARTx == USART2){
+		__NVIC_EnableIRQ(USART2_IRQn);
+	}
+	else if (ptrUsartHandler->ptrUSARTx == USART6){
+		__NVIC_EnableIRQ(USART6_IRQn);
+	}
+	else {
+		__NOP();
+	}
+
+
+	/* Se vuelve a encender las interrupciones globales */
+	__enable_irq();
+
+}
+
+__attribute__ ((weak)) void callback_USART1_RX(void){
+	__NOP();
+}
+
+__attribute__ ((weak)) void callback_USART2_RX(void){
+	__NOP();
+}
+
+__attribute__ ((weak)) void callback_USART6_RX(void){
+	__NOP();
+}
+
+
+void USART1_IRQHandler(void){
+	// Evaluacion de la interrupcion en USART1 RX
+	if(USART1->SR & USART_SR_RXNE){
+		// Bajar bandera en interrupción USART1 RX?
+
+		// Se debe guardar la informacion del DR a cual variable? No entendi la funcion con el auxVar
+
+		// Llamar al callback
+		callback_USART1_RX();
 	}
 }
+
+void USART2_IRQHandler(void){
+	if(USART2->SR & USART_SR_RXNE){
+
+		callback_USART2_RX();
+	}
+}
+
+void USART6_IRQHandler(void){
+	if(USART6->SR & USART_SR_RXNE){
+
+		callback_USART6_RX();
+	}
+}
+
+
+
+
+
 
 /* funcion para escribir un solo char */
 int writeChar(USART_Handler_t *ptrUsartHandler, int dataToSend ){

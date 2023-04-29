@@ -37,6 +37,8 @@
 #define USART_INTERRUPT_TX_NONE		0
 #define USART_INTERRUPT_TX_ENABLE	1
 
+
+
 /* Estructura para la configuración de la comunicacion:
  * Velocidad (baudrate)
  * Tamaño de los datos
@@ -73,6 +75,10 @@ typedef struct
 	uint8_t			dataOutputSize;
 }USART_Handler_t;
 
+/* Definicion de callbacks para interrupciones USART */
+void callback_USART1_RX(void);
+void callback_USART2_RX(void);
+void callback_USART6_RX(void);
 
 
 /* Definicion de los prototipos para las funciones del USART */
