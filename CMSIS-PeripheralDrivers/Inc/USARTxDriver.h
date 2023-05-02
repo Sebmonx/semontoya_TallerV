@@ -75,6 +75,10 @@ typedef struct
 	uint8_t			dataOutputSize;
 }USART_Handler_t;
 
+/* Definición variable para datos */
+
+
+
 /* Definicion de callbacks para interrupciones USART */
 void callback_USART1_RX(void);
 void callback_USART2_RX(void);
@@ -82,6 +86,7 @@ void callback_USART6_RX(void);
 
 
 /* Definicion de los prototipos para las funciones del USART */
+uint8_t get_data_RX (void);
 void USART_Config(USART_Handler_t *ptrUsartHandler);
 int writeChar(USART_Handler_t *ptrUsartHandler, int dataToSend );
 void writeWord(USART_Handler_t *ptrUsartHandler, char *word);

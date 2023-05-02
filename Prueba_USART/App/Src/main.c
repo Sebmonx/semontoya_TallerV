@@ -22,13 +22,18 @@
 #include "BasicTimer.h"
 
 GPIO_Handler_t PinTX_handler = {0};
-USART_Handler_t USART2_TX_handler = {0};
+GPIO_Handler_t PinRX_handler = {0};
+USART_Handler_t USART2_handler = {0};
+
 
 BasicTimer_Handler_t timerLed = {0};
 GPIO_Handler_t blinkyLed = {0};
 
-char mensaje[] = "Prueba uno";
+
+char mensaje[] = {0};
 uint8_t timer = 0;
+char data_recibida_USART2 = 0;
+
 
 void inicializacion_pines(void);
 void inicializacion_Led_Estado(void);
@@ -43,31 +48,47 @@ int main(void)
     /* Loop forever */
 	while(1){
 		if(timer > 4){
-			writeChar(&USART2_TX_handler, dataToSend);
-			writeWord(&USART2_TX_handler, mensaje);
+			writeChar(&USART2_handler, dataToSend);
+			writeChar(&USART2_handler,data_recibida_USART2);
+			//writeWord(&USART2_handler, mensaje);
+			timer = 0;
 		}
+
 	}
 
 	return 0;
 }
 
 void inicializacion_pines(void){
+
 	// Para realizar transmisión por USB se utilizan los pines PA2 (TX) y PA3 (RX)
-	// Inicializacion de PIN A2 con funcion alternativa asociada al USART
+	// Inicializacion de PIN A2 con funcion alternativa de USART2
 	PinTX_handler.pGPIOx = GPIOA;
 	PinTX_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_2;
 	PinTX_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
-	PinTX_handler.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
 	PinTX_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF7;
 	GPIO_Config(&PinTX_handler);
 
-	USART2_TX_handler.ptrUSARTx = USART2;
-	USART2_TX_handler.USART_Config.USART_mode = USART_MODE_TX;
-	USART2_TX_handler.USART_Config.USART_baudrate = USART_BAUDRATE_9600;
-	USART2_TX_handler.USART_Config.USART_datasize = USART_DATASIZE_8BIT;
-	USART2_TX_handler.USART_Config.USART_parity = USART_PARITY_NONE;
-	USART2_TX_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
-	USART_Config(&USART2_TX_handler);
+	// Inicialización de PIN A3 con función alternativa de USART2
+	PinRX_handler.pGPIOx = GPIOA;
+	PinRX_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_3;
+	PinRX_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
+	PinRX_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF7;
+	GPIO_Config(&PinRX_handler);
+
+	// Inicialización de módulo serial USART2 transmisión + recepción e interrupción RX
+	USART2_handler.ptrUSARTx = USART2;
+	USART2_handler.USART_Config.USART_mode = USART_MODE_RXTX;
+	USART2_handler.USART_Config.USART_baudrate = USART_BAUDRATE_9600;
+	USART2_handler.USART_Config.USART_datasize = USART_DATASIZE_8BIT;
+	USART2_handler.USART_Config.USART_parity = USART_PARITY_NONE;
+	USART2_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
+	USART2_handler.USART_Config.USART_enableIntRX = USART_INTERRUPT_RX_ENABLE;
+	USART2_handler.USART_Config.USART_enableIntTX = USART_INTERRUPT_TX_NONE;
+	USART_Config(&USART2_handler);
+
+
+
 }
 
 void inicializacion_Led_Estado(void){
@@ -93,4 +114,8 @@ void inicializacion_Led_Estado(void){
 void BasicTimer2_Callback(void){
 	GPIOxTooglePin(&blinkyLed);
 	timer++;
+}
+
+void callback_USART2_RX(void){
+	data_recibida_USART2 = get_data_RX();
 }

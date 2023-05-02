@@ -8,6 +8,8 @@
 #include <stm32f4xx.h>
 #include "USARTxDriver.h"
 
+uint8_t auxiliar_data_RX = 0;
+
 /**
  * Configurando el puerto Serial...
  * Recordar que siempre se debe comenzar con activar la señal de reloj
@@ -177,14 +179,14 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 	__disable_irq();
 
 	// Chequeo de activación de interrupción en recepción
-	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_RX_ENABLE){
+	if(ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_RX_ENABLE){
 		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
 		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_RXNEIE;
 	} else {
 		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
 	}
 
-
+	// Matriculamos la interrupción en el NVIC
 	if(ptrUsartHandler->ptrUSARTx == USART1){
 		__NVIC_EnableIRQ(USART1_IRQn);
 	}
@@ -223,7 +225,7 @@ void USART1_IRQHandler(void){
 		// Bajar bandera en interrupción USART1 RX?
 
 		// Se debe guardar la informacion del DR a cual variable? No entendi la funcion con el auxVar
-
+		auxiliar_data_RX = (uint8_t) USART1->DR;
 		// Llamar al callback
 		callback_USART1_RX();
 	}
@@ -231,20 +233,21 @@ void USART1_IRQHandler(void){
 
 void USART2_IRQHandler(void){
 	if(USART2->SR & USART_SR_RXNE){
-
+		auxiliar_data_RX = (uint8_t) USART2->DR;
 		callback_USART2_RX();
 	}
 }
 
 void USART6_IRQHandler(void){
 	if(USART6->SR & USART_SR_RXNE){
-
+		auxiliar_data_RX = (uint8_t) USART6->DR;
 		callback_USART6_RX();
 	}
 }
 
-
-
+uint8_t get_data_RX (void){
+	return auxiliar_data_RX;
+}
 
 
 
@@ -261,6 +264,11 @@ int writeChar(USART_Handler_t *ptrUsartHandler, int dataToSend ){
 }
 
 void writeWord(USART_Handler_t *ptrUsartHandler, char *word){
+	// Chequeo de registro vacío para el envío
+	while(!(ptrUsartHandler->ptrUSARTx->SR & USART_SR_TXE)){
+		__NOP();
+	}
+
 	char dataToSend = 0;
 	int i = 0;
 	while(word[i]){
