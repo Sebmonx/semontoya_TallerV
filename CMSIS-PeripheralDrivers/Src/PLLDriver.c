@@ -10,7 +10,7 @@
 
 void PLL_custom_config(PLL_Config_t *ptrPLL){
 
-	freq = 16;
+	uint8_t frequency = 16;
 	/* Asegurar que el PLL está apagado para configuración */
 	RCC->CR &= ~RCC_CR_PLLON;
 
@@ -27,11 +27,12 @@ void PLL_custom_config(PLL_Config_t *ptrPLL){
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLM_Msk;
 
 	/* Divisón por M */
-	freq = freq/(ptrPLL->m_Factor);
-	if(freq < 1 || 2 < freq){
-		return 1;
+	frequency = frequency/(ptrPLL->m_Factor);
+	// No configurar si supera los límites
+	while(frequency < 1 || 2 < frequency){
+		__NOP();
 	}
-	RCC->PLLCFGR |= (ptrPLL->m_Factor << RCC_PLLC8FGR_PLLM_Pos);
+	RCC->PLLCFGR |= (ptrPLL->m_Factor << RCC_PLLCFGR_PLLM_Pos);
 
 
 
@@ -40,11 +41,13 @@ void PLL_custom_config(PLL_Config_t *ptrPLL){
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLN_Msk;
 
 	/* Multiplicación por N */
-	freq = freq * (ptrPLL->n_Factor);
-	if(freq < 100 || 432 < freq){
-		return 1;
+	frequency = frequency * (ptrPLL->n_Factor);
+
+	// No configurar si supera los límites
+	while(frequency < 100 || 432 < frequency){
+		__NOP();
 	}
-	RCC->PLLCFGR |= (ptrPLL->n_Factor << RCC_PLLCFGR_PLLN_Msk);
+	RCC->PLLCFGR |= (ptrPLL->n_Factor << RCC_PLLCFGR_PLLN_Pos);
 
 
 
@@ -53,19 +56,21 @@ void PLL_custom_config(PLL_Config_t *ptrPLL){
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLP_Msk;
 
 	/* División por P */
-	freq = freq/(ptrPLL->p_Factor);
-	if(freq > 100){
-		return 1;
+	frequency = frequency/(ptrPLL->p_Factor);
+	// No configurar si supera los límites
+	while(frequency > 100){
+		__NOP();
 	}
-	RCC->PLLCFGR |= (ptrPLL->p_Factor << RRCC_PLLCFGR_PLLN_Msk);
+	RCC->PLLCFGR |= (ptrPLL->p_Factor << RCC_PLLCFGR_PLLN_Pos);
 
-	return 0;
 }
 
 void PLL_100Mhz_Config(void){
-	freq = (16/8)*100*(1/2);
-	if(freq > 100){
-		return 1;
+	uint8_t frequency = (16/8)*100*(1/2);
+
+	// Si la frecuencia supera 100Mhz no realizar configuración
+	while(frequency > 100){
+		__NOP();
 	}
 	/* Asegurar que el PLL está apagado para configuración */
 	RCC->CR &= ~RCC_CR_PLLON;
@@ -77,21 +82,21 @@ void PLL_100Mhz_Config(void){
 	/* Reinicio de bits en divisor /M*/
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLM_Msk;
 	/* Divisón por 8 */
-	RCC->PLLCFGR |= (8 << RCC_PLLC8FGR_PLLM_Pos);
+	RCC->PLLCFGR |= (8 << RCC_PLLCFGR_PLLM_Pos);
 
 
 	/* Multiplicación de salida VCO (2MHz) a 200MHz */
 	/* Reinicio de bits */
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLN_Msk;
 	/* Multiplicación por 100 */
-	RCC->PLLCFGR |= (100 << RCC_PLLCFGR_PLLN_Msk);
+	RCC->PLLCFGR |= (100 << RCC_PLLCFGR_PLLN_Pos);
 
 
 	/* División de salida para sistema principal (200MHz) a 100MHz */
 	/* Reinicio de bits */
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLP_Msk;
 	/* División por 2 */
-	RCC->PLLCFGR |= (2 << RRCC_PLLCFGR_PLLN_Msk);
+	RCC->PLLCFGR |= (2 << RCC_PLLCFGR_PLLN_Pos);
 
 }
 

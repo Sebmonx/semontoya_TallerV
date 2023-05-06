@@ -160,22 +160,27 @@ void stopPwmSignal(PWM_Handler_t *ptrPwmHandler) {
 	switch(ptrPwmHandler->config.channel){
 	case(PWM_CHANNEL_1):{
 		ptrPwmHandler->ptrTIMx->CCER &= ~TIM_CCER_CC1E;
+		break;
 	}
 
 	case(PWM_CHANNEL_2):{
 		ptrPwmHandler->ptrTIMx->CCER &= ~TIM_CCER_CC2E;
+		break;
 	}
 
 	case(PWM_CHANNEL_3):{
 		ptrPwmHandler->ptrTIMx->CCER &= ~TIM_CCER_CC3E;
+		break;
 	}
 
 	case(PWM_CHANNEL_4):{
 		ptrPwmHandler->ptrTIMx->CCER &= ~TIM_CCER_CC4E;
+		break;
 	}
 
 	default:{
 		__NOP();
+		break;
 	}
 	}
 }
