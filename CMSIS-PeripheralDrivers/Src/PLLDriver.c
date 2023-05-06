@@ -59,7 +59,7 @@ void PLL_custom_config(PLL_Config_t *ptrPLL){
 	}
 	RCC->PLLCFGR |= (ptrPLL->p_Factor << RRCC_PLLCFGR_PLLN_Msk);
 
-	PLL_Frequency_Test();
+	return 0;
 }
 
 void PLL_100Mhz_Config(void){
@@ -104,9 +104,43 @@ void PLL_Frequency_Test(GPIO_Handler_t *ptrA8){
 	ptrA8->GPIO_PinConfig.GPIO_PinAltFunMode = AF0;
 	GPIO_Config(ptrA8);
 
-	/* Encendido MCO1 */
+	/* Configuración prescaler de MCO1 PLL/5 */
+	RCC->CFGR &= ~RCC_CFGR_MCO1PRE_Msk;
+	RCC->CFGR |= (0b111 << RCC_CFGR_MCO1PRE_Pos);
 
+	/* Encendido señal para lectura MCO1 */
+	RCC->CFGR |= RCC_CFGR_MCO1;
 
+	while(!(RCC->CR & RCC_CR_PLLRDY)){
+		__NOP();
+	}
+}
+
+void PLL_On_forSystem(uint8_t frecuencia_Mhz){
+	/* Configuración de memoria flash para nueva frecuencia */
+	if(frecuencia_Mhz <= 30){
+		FLASH->ACR &= ~FLASH_ACR_LATENCY_Msk;
+	}
+	else if (frecuencia_Mhz <= 64){
+		FLASH->ACR |= FLASH_ACR_LATENCY_1WS;
+	}
+	else if (frecuencia_Mhz <= 90){
+		FLASH->ACR |= FLASH_ACR_LATENCY_2WS;
+	}
+	else {
+		FLASH->ACR |= FLASH_ACR_LATENCY_3WS;
+	}
+
+	/* Confirmación de PLL listo */
+	while(!(RCC->CR & RCC_CR_PLLRDY)){
+		__NOP();
+	}
+
+	/* Configuración multiplexor que envia reloj a todo el hardware */
 	/* Encender señal PLL */
 	RCC->CR |= RCC_CR_PLLON;
 }
+
+
+
+
