@@ -9,7 +9,7 @@
 #define PLLDRIVER_H_
 
 #include "stm32f4xx.h"
-
+#include "GPIOxDriver.h"
 
 #define HSI_CLOCK	0
 #define HSE_CLOCK	1
@@ -25,9 +25,12 @@ typedef struct
 
 
 void PLL_custom_config(PLL_Config_t *ptrPLL);
-void PLL_100Mhz_config(void);
-void PLL_Frequency_Test(GPIO_Handler_t *ptrA8);
-void PLL_On_forSystem(uint8_t frecuencia_Mhz);
-
+void PLL_100Mhz_Config(void);
+void PLL_16Mhz_Config(void);
+void PLL_Frequency_Output(GPIO_Handler_t *ptrA8);
+void PLL_ON_forSystem(uint8_t frecuencia_Mhz);
+void systemClock_16MHz(void);
+void systemClock_100MHz(void);
+void systemClock_Output(GPIO_Handler_t *ptrC9);
 
 #endif /* PLLDRIVER_H_ */
