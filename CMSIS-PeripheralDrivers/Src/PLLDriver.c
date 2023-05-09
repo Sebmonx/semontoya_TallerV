@@ -35,7 +35,6 @@ void PLL_custom_config(PLL_Config_t *ptrPLL){
 	RCC->PLLCFGR |= (ptrPLL->m_Factor << RCC_PLLCFGR_PLLM_Pos);
 
 
-
 	/* Multiplicación de salida VCO (2MHz) a 200MHz */
 	/* Reinicio de bits xN */
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLN_Msk;
