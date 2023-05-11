@@ -57,7 +57,7 @@ void pwm_Config(PWM_Handler_t *ptrPwmHandler){
 
 	case PWM_CHANNEL_1:{
 		// Seleccionamos como salida el canal
-		ptrPwmHandler->ptrTIMx->CCMR1 &= ~TIM_CCMR1_CC1S_Msk;
+		ptrPwmHandler->ptrTIMx->CCMR1 &= ~TIM_CCMR1_CC1S;
 
 		// Configuramos el canal como PWM
 		ptrPwmHandler->ptrTIMx->CCMR1 &= ~(0b111 << TIM_CCMR1_OC1M_Pos); /* Limpieza bits */
@@ -232,11 +232,11 @@ void setFrequency(PWM_Handler_t *ptrPwmHandler){
 	// antes de hacer un update y reload.
 	/* Reinicio de valores en autoreload según cantidad de bits */
 	if(ptrPwmHandler->ptrTIMx == TIM2 || ptrPwmHandler->ptrTIMx == TIM5){
-		ptrPwmHandler->ptrTIMx->ARR = 0xFFFFFFFF;
+
 		/* Carga de período */
 		ptrPwmHandler->ptrTIMx->ARR = ptrPwmHandler->config.periodo;
 	} else {
-		ptrPwmHandler->ptrTIMx->ARR = 0x0000FFFF;
+
 		/* Carga de período */
 		ptrPwmHandler->ptrTIMx->ARR = ptrPwmHandler->config.periodo;
 	}

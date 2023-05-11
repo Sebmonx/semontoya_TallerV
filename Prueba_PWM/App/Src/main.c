@@ -18,48 +18,89 @@
 
 #include <stdint.h>
 #include "GPIOxDriver.h"
-#include "USARTxDriver.h"
+#include "PwmDriver.h"
 #include "BasicTimer.h"
+#include "USARTxDriver.h"
 
+// Handlers PWM
+GPIO_Handler_t pinPWM_handler ={0};
+PWM_Handler_t PWM_handler = {0};
+
+// Handlers transmisión USART
 GPIO_Handler_t PinTX_handler = {0};
 GPIO_Handler_t PinRX_handler = {0};
 USART_Handler_t USART2_handler = {0};
 
-
+// Handlers blinky led
 BasicTimer_Handler_t timerLed = {0};
 GPIO_Handler_t blinkyLed = {0};
 
-
-char mensaje[] = {0};
-uint8_t timer = 0;
+/* Variables */
 char data_recibida_USART2 = 0;
+uint16_t valor_Dutty = 1500;
+char mensaje[128];
 
-
-void inicializacion_pines(void);
+// Funciones a utilizar
+void inicializacion_PWM(void);
+void inicializacion_pines_USART(void);
 void inicializacion_Led_Estado(void);
+
 
 int main(void)
 {
-	char dataToSend = 'd';
-
-	inicializacion_pines();
 	inicializacion_Led_Estado();
+	inicializacion_PWM();
+	inicializacion_pines_USART();
+	startPwmSignal(&PWM_handler);
 
     /* Loop forever */
 	while(1){
-		if(timer > 4){
-			writeChar(&USART2_handler, dataToSend);
-			writeChar(&USART2_handler,data_recibida_USART2);
-			//writeWord(&USART2_handler, mensaje);
-			timer = 0;
+		if(data_recibida_USART2 != '\0') {
+
+			if(data_recibida_USART2 == 'D'){
+				valor_Dutty -= 10;
+				updateDuttyCycle(&PWM_handler, valor_Dutty);
+			}
+			if(data_recibida_USART2 == 'E'){
+				valor_Dutty += 10;
+				updateDuttyCycle(&PWM_handler, valor_Dutty);
+			}
+
+			/* Imprimir mensaje */
+			sprintf(mensaje, "dutty = %u \n", (unsigned int)valor_Dutty);
+			writeWord(&USART2_handler, mensaje);
+
+			data_recibida_USART2 = '\0';
 		}
+
+
 
 	}
 
 	return 0;
 }
 
-void inicializacion_pines(void){
+void inicializacion_PWM(void){
+	pinPWM_handler.pGPIOx = GPIOB;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinOType = GPIO_OTYPE_PUSHPULL;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinSpeed = GPIO_OSPEED_FAST;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF2;
+	GPIO_Config(&pinPWM_handler);
+
+	PWM_handler.ptrTIMx = TIM3;
+	PWM_handler.config.channel = PWM_CHANNEL_2;
+	PWM_handler.config.periodo = 20000;
+	PWM_handler.config.prescaler = 16; /* Incremento cada microsegundo */
+	PWM_handler.config.duttyCicle = valor_Dutty;
+	pwm_Config(&PWM_handler);
+
+}
+
+/* Pines A2 y A3 */
+void inicializacion_pines_USART(void){
 
 	// Para realizar transmisión por USB se utilizan los pines PA2 (TX) y PA3 (RX)
 	// Inicializacion de PIN A2 con funcion alternativa de USART2
@@ -86,11 +127,9 @@ void inicializacion_pines(void){
 	USART2_handler.USART_Config.USART_enableIntRX = USART_INTERRUPT_RX_ENABLE;
 	USART2_handler.USART_Config.USART_enableIntTX = USART_INTERRUPT_TX_NONE;
 	USART_Config(&USART2_handler);
-
-
-
 }
 
+/* Pin A5 */
 void inicializacion_Led_Estado(void){
 	// Timer para LED de estado usando el LED2
 	timerLed.ptrTIMx = TIM2;
@@ -110,13 +149,13 @@ void inicializacion_Led_Estado(void){
 	GPIO_Config(&blinkyLed);
 }
 
-/* Centelleo de LED de estado */
+/* Centelleo led de estado */
 void BasicTimer2_Callback(void){
 	GPIOxTooglePin(&blinkyLed);
-	timer++;
 }
 
 /* Interrupción por recepción USART */
 void callback_USART2_RX(void){
 	data_recibida_USART2 = get_data_RX();
 }
+
