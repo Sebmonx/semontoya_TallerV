@@ -135,8 +135,8 @@ void inicializacion_Led_Estado(void){
 	timerLed.ptrTIMx = TIM2;
 	timerLed.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
 	timerLed.TIMx_Config.TIMx_speed = BTIMER_SPEED_1ms;
-	timerLed.TIMx_Config.TIMx_period = 300; // Tiempo en milisegundos
-	timerLed.TIMx_Config.TIMx_interruptEnable = 1; // Activar interrupción
+	timerLed.TIMx_Config.TIMx_period = 300; 			// Tiempo en milisegundos
+	timerLed.TIMx_Config.TIMx_interruptEnable = 1; 		// Activar interrupción
 	BasicTimer_Config(&timerLed);
 
 	// Controlador de LED2 asignado como led de estado

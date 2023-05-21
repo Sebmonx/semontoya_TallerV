@@ -31,8 +31,6 @@ TIM_TypeDef	*ptrTimerUsed;
 void BasicTimer_Config(BasicTimer_Handler_t *ptrBTimerHandler){
 	// Guardamos una referencia al periferico que estamos utilizando...
 	ptrTimerUsed = ptrBTimerHandler->ptrTIMx;
-//	uint8_t auxVar = 0;
-//	uint8_t auxPos = 0;
 
 	/* 0. Desactivamos las interrupciones globales mientras configuramos el sistema.*/
 	__disable_irq();
@@ -61,9 +59,18 @@ void BasicTimer_Config(BasicTimer_Handler_t *ptrBTimerHandler){
 	/* 2. Configuramos el Pre-scaler
 	 * Recordar que el prescaler nos indica la velocidad a la que se incrementa el counter, de forma que
 	 * periodo_incremento * veces_incremento_counter = periodo_update
-	 * Modificar el valor del registro PSC en el TIM utilizado
-	 */
-	ptrBTimerHandler->ptrTIMx->PSC = ptrBTimerHandler->TIMx_Config.TIMx_speed;
+	 * Modificar el valor del registro PSC en el TIM utilizado */
+
+
+	while(ptrBTimerHandler->TIMx_Config.MCU_frequency < 1 || ptrBTimerHandler->TIMx_Config.MCU_frequency > 100){
+		// Confirmar la selección de frecuencia del MCU
+		__NOP();
+	}
+	/* Variable para escoger el valor correcto a poner en el
+	 * prescaler dependiendo de la frecuencia que se configuró
+	 * para el microcontrolador */
+	uint32_t varAux = (ptrBTimerHandler->TIMx_Config.MCU_frequency)*(ptrBTimerHandler->TIMx_Config.TIMx_speed);
+	ptrBTimerHandler->ptrTIMx->PSC = varAux;
 
 	/* 3. Configuramos la dirección del counter (up/down)*/
 	if(ptrBTimerHandler->TIMx_Config.TIMx_mode == BTIMER_MODE_UP){
@@ -78,14 +85,14 @@ void BasicTimer_Config(BasicTimer_Handler_t *ptrBTimerHandler){
 		/* 3c. Reiniciamos el registro counter*/
 		ptrBTimerHandler->ptrTIMx->CNT = RESET;
 
-	}else{
+	}else {
 		/* 3a. Estamos en DOWN_Mode, el limite se carga en ARR (0) y se comienza en un valor alto
 		 * Trabaja contando en direccion descendente*/
 		ptrBTimerHandler->ptrTIMx->CR1 &= ~TIM_CR1_DIR;
 		ptrBTimerHandler->ptrTIMx->CR1 |= TIM_CR1_DIR;
 
 		/* 3b. Configuramos el Auto-reload. Este es el "limite" hasta donde el CNT va a contar
-		 * En modo descendente, con numero positivos, cual es el minimi valor al que ARR puede llegar*/
+		 * En modo descendente, con numero positivos, cual es el minimo valor al que ARR puede llegar*/
 		ptrBTimerHandler->ptrTIMx->ARR = ptrBTimerHandler->TIMx_Config.TIMx_period - 1;
 
 		/* 3c. Reiniciamos el registro counter
@@ -130,6 +137,7 @@ void BasicTimer_Config(BasicTimer_Handler_t *ptrBTimerHandler){
 	/* 7. Volvemos a activar las interrupciones del sistema */
 	__enable_irq();
 }
+
 
 __attribute__((weak)) void BasicTimer2_Callback(void){
 	 __NOP();

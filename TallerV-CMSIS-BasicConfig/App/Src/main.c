@@ -21,6 +21,8 @@
 
 int main(void)
 {
+	/* Activador coprocesador matemático - FPU */
+	//SCB->CPACR |= (0xF << 20);
     /* Loop forever */
 	while(1){
 
