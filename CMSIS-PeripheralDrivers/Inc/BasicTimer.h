@@ -19,8 +19,6 @@
 
 
 
-
-
 /* Estructura que contiene la configuración mínima necesaria para el manejo del Timer.*/
 typedef struct
 {

@@ -11,115 +11,72 @@
 
 
 void PLL_config(PLL_Config_t *ptrPLL){
-	if(ptrPLL->final_Frequency == 100){
-		PLL_100Mhz_Config();
-	}
-	else if(ptrPLL->final_Frequency == 16){
-		PLL_16Mhz_Config();
-	}
-	else{
-		uint8_t actual_Frequency = 16;
+	uint8_t actual_Frequency = 16;
 
-		/* Asegurar que el PLL está apagado para configuración */
-		RCC->CR &= ~RCC_CR_PLLON;
-
-		/* Selección de reloj de entrada para PLL */
-		if(ptrPLL->input_Clock == HSI_CLOCK){
-			RCC->PLLCFGR &= RCC_PLLCFGR_PLLSRC_HSI;
-		} else {
-			RCC->PLLCFGR |= RCC_PLLCFGR_PLLSRC_HSE;
-		}
-
-		/* División de reloj principal para entrar a VCO */
-		/* Reinicio de bits en divisor /M*/
-		RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLM_Msk;
-
-		/* Divisón por M */
-		actual_Frequency = actual_Frequency/(ptrPLL->m_Factor);
-
-		// No configurar si supera los límites
-		if(actual_Frequency < 1 || 2 < actual_Frequency){
-			while(1){
-				// Supera los límites
-				__NOP();
-			}
-		}
-		// Configurar factor M
-		RCC->PLLCFGR |= (ptrPLL->m_Factor << RCC_PLLCFGR_PLLM_Pos);
-
-
-		/* Multiplicación de salida VCO (2MHz) a 200MHz */
-		/* Reinicio de bits xN */
-		RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLN_Msk;
-
-		/* Multiplicación por N */
-		actual_Frequency = actual_Frequency * (ptrPLL->n_Factor);
-
-		// No configurar si supera los límites
-		if(actual_Frequency < 100 || 432 < actual_Frequency){
-			while(1){
-				// Supera los límites
-				__NOP();
-			}
-		}
-		// Configurar factor N
-		RCC->PLLCFGR |= (ptrPLL->n_Factor << RCC_PLLCFGR_PLLN_Pos);
-
-
-		/* División de salida para sistema principal (200MHz) a 100MHz */
-		/* Reinicio de bits */
-		RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLP_Msk;
-
-		/* División por P */
-		actual_Frequency = actual_Frequency/(ptrPLL->p_Factor);
-		// No configurar si supera los límites
-		if(actual_Frequency > 100){
-			while(1){
-				// Supera los límites
-				__NOP();
-			}
-		}
-		// Configurar factor P
-		RCC->PLLCFGR |= (2 << RCC_PLLCFGR_PLLN_Pos);
-
-		/* Guardar frecuencia final configurada */
-		ptrPLL->final_Frequency = actual_Frequency;
-	}
-}
-
-void PLL_100Mhz_Config(void){
-	uint8_t frequency = (16/8)*100*(1/2);
-
-	// Si la frecuencia supera 100Mhz no realizar configuración
-	while(frequency > 100){
-		__NOP();
-	}
 	/* Asegurar que el PLL está apagado para configuración */
 	RCC->CR &= ~RCC_CR_PLLON;
 
 	/* Selección de reloj de entrada para PLL */
-	RCC->PLLCFGR &= RCC_PLLCFGR_PLLSRC_HSI;
+	if(ptrPLL->input_Clock == HSI_CLOCK){
+		RCC->PLLCFGR &= RCC_PLLCFGR_PLLSRC_HSI;
+	} else {
+		RCC->PLLCFGR |= RCC_PLLCFGR_PLLSRC_HSE;
+	}
 
-	/* División de reloj principal a 2MHz para entrar a VCO */
+	/* División de reloj principal para entrar a VCO */
 	/* Reinicio de bits en divisor /M*/
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLM_Msk;
-	/* Divisón por 8 */
-	RCC->PLLCFGR |= (8 << RCC_PLLCFGR_PLLM_Pos);
+
+	/* Divisón por M */
+	actual_Frequency = actual_Frequency/(ptrPLL->m_Factor);
+
+	// No configurar si supera los límites
+	if(actual_Frequency < 1 || 2 < actual_Frequency){
+		while(1){
+			// Supera los límites
+			__NOP();
+		}
+	}
+	// Configurar factor M
+	RCC->PLLCFGR |= (ptrPLL->m_Factor << RCC_PLLCFGR_PLLM_Pos);
 
 
 	/* Multiplicación de salida VCO (2MHz) a 200MHz */
-	/* Reinicio de bits */
+	/* Reinicio de bits xN */
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLN_Msk;
-	/* Multiplicación por 100 */
-	RCC->PLLCFGR |= (100 << RCC_PLLCFGR_PLLN_Pos);
+
+	/* Multiplicación por N */
+	actual_Frequency = actual_Frequency * (ptrPLL->n_Factor);
+
+	// No configurar si supera los límites
+	if(actual_Frequency < 100 || 432 < actual_Frequency){
+		while(1){
+			// Supera los límites
+			__NOP();
+		}
+	}
+	// Configurar factor N
+	RCC->PLLCFGR |= (ptrPLL->n_Factor << RCC_PLLCFGR_PLLN_Pos);
 
 
 	/* División de salida para sistema principal (200MHz) a 100MHz */
 	/* Reinicio de bits */
 	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLP_Msk;
-	/* División por 2 */
+
+	/* División por P */
+	actual_Frequency = actual_Frequency/(ptrPLL->p_Factor);
+	// No configurar si supera los límites
+	if(actual_Frequency > 100){
+		while(1){
+			// Supera los límites
+			__NOP();
+		}
+	}
+	// Configurar factor P
 	RCC->PLLCFGR |= (2 << RCC_PLLCFGR_PLLN_Pos);
 
+	/* Guardar frecuencia final configurada */
+	ptrPLL->final_Frequency = actual_Frequency;
 }
 
 void PLL_Frequency_Output(GPIO_Handler_t *ptrA8){
@@ -191,17 +148,20 @@ void PLL_ON_forSystem(PLL_Config_t *ptrPLL){
 	RCC->CFGR |= RCC_CFGR_SW_PLL;
 }
 
-void systemClock_16MHz(void){
+void systemClock_16MHz(PLL_Config_t *ptrPLL){
 
-	/* Apaga y configura PLL */
-	PLL_16Mhz_Config();
+	ptrPLL->input_Clock = HSI_CLOCK;
+	ptrPLL->m_Factor = 8;
+	ptrPLL->n_Factor = 64;
+	ptrPLL->p_Factor = 8;
+	PLL_config(ptrPLL);	// Apaga y configura PLL
 
 	/* Chequear HSI listo */
 	while(!(RCC->CR & RCC_CR_HSIRDY)){
 		__NOP();
 	}
 
-	/* Configuración de memoria flash para nueva frecuencia */
+	/* Configuración de memoria flash para 16MHz */
 	FLASH->ACR &= ~FLASH_ACR_LATENCY_Msk;
 
 	/* Configuración multiplexor que envia reloj a todo el hardware */
@@ -209,57 +169,26 @@ void systemClock_16MHz(void){
 	RCC->CFGR &= RCC_CFGR_SWS_HSI;
 }
 
-void systemClock_100MHz(void){
+void systemClock_100MHz(PLL_Config_t *ptrPLL){
 
-	PLL_100Mhz_Config();
+	ptrPLL->input_Clock = HSI_CLOCK;
+	ptrPLL->m_Factor = 8;
+	ptrPLL->n_Factor = 100;
+	ptrPLL->p_Factor = 2;
+	PLL_config(ptrPLL);	// Apaga y configura PLL
 
-	// Endender señal de PLL
-	RCC->CR |= RCC_CR_PLLON;
-
-	/* Confirmación de PLL listo */
-	while(!(RCC->CR & RCC_CR_PLLRDY)){
-		__NOP();
-	}
-
-	/* Configuración de memoria flash para nueva frecuencia */
-	FLASH->ACR |= FLASH_ACR_LATENCY_3WS;
-
-	/* División mínima para no superar limites del bus APB1 */
-	RCC->CFGR |= RCC_CFGR_PPRE1_DIV2;
-
-	/* Configuración multiplexor que envia reloj a todo el hardware */
-	/* Enviar señal PLL */
-	RCC->CFGR |= RCC_CFGR_SWS_PLL;
+	PLL_ON_forSystem(ptrPLL);
 }
 
-void PLL_16Mhz_Config(void){
+void systemClock_80MHz(PLL_Config_t *ptrPLL){
 
-	/* Asegurar que el PLL está apagado para configuración */
-	RCC->CR &= ~RCC_CR_PLLON;
+	ptrPLL->input_Clock = HSI_CLOCK;
+	ptrPLL->m_Factor = 8;
+	ptrPLL->n_Factor = 80;
+	ptrPLL->p_Factor = 2;
+	PLL_config(ptrPLL);
 
-	/* Selección de reloj de entrada para PLL */
-	RCC->PLLCFGR &= RCC_PLLCFGR_PLLSRC_HSI;
-
-	/* División de reloj principal a 2MHz para entrar a VCO */
-	/* Reinicio de bits en divisor /M*/
-	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLM_Msk;
-	/* Divisón por 8 */
-	RCC->PLLCFGR |= (8 << RCC_PLLCFGR_PLLM_Pos);
-
-
-	/* Multiplicación de salida VCO (2MHz) a 160MHz */
-	/* Reinicio de bits */
-	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLN_Msk;
-	/* Multiplicación por 100 */
-	RCC->PLLCFGR |= (64 << RCC_PLLCFGR_PLLN_Pos);
-
-
-	/* División de salida para sistema principal (200MHz) a 100MHz */
-	/* Reinicio de bits */
-	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLP_Msk;
-	/* División por 2 */
-	RCC->PLLCFGR |= (8 << RCC_PLLCFGR_PLLN_Pos);
-
+	PLL_ON_forSystem(ptrPLL);
 }
 
 void systemClock_Output(GPIO_Handler_t *ptrC9){

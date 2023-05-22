@@ -74,59 +74,116 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 
 	// 2.4 Configuramos los stop bits (SFR USART_CR2)
 	switch(ptrUsartHandler->USART_Config.USART_stopbits){
-	case USART_STOPBIT_1: {
-		// Debemoscargar el valor 0b00 en los dos bits de STOP
-		ptrUsartHandler->ptrUSARTx->CR2 &= ~USART_CR2_STOP;
-		break;
-	}
-	case USART_STOPBIT_0_5: {
-		// Debemoscargar el valor 0b01 en los dos bits de STOP
-		ptrUsartHandler->ptrUSARTx->CR2 &= ~USART_CR2_STOP;
-		ptrUsartHandler->ptrUSARTx->CR2 |= USART_CR2_STOP_0;
-		break;
-	}
-	case USART_STOPBIT_2: {
-		// Debemoscargar el valor 0b10 en los dos bits de STOP
-		ptrUsartHandler->ptrUSARTx->CR2 &= ~USART_CR2_STOP;
-		ptrUsartHandler->ptrUSARTx->CR2 |= USART_CR2_STOP_1;
-		break;
-	}
-	case USART_STOPBIT_1_5: {
-		// Debemoscargar el valor 0b11 en los dos bits de STOP
-		ptrUsartHandler->ptrUSARTx->CR2 |= USART_CR2_STOP;
-		break;
-	}
-	default: {
-		// En el caso por defecto seleccionamos 1 bit de parada
-		ptrUsartHandler->ptrUSARTx->CR2 &= ~USART_CR2_STOP;
-		break;
-	}
+		case USART_STOPBIT_1: {
+			// Debemoscargar el valor 0b00 en los dos bits de STOP
+			ptrUsartHandler->ptrUSARTx->CR2 &= ~USART_CR2_STOP;
+			break;
+		}
+		case USART_STOPBIT_0_5: {
+			// Debemoscargar el valor 0b01 en los dos bits de STOP
+			ptrUsartHandler->ptrUSARTx->CR2 &= ~USART_CR2_STOP;
+			ptrUsartHandler->ptrUSARTx->CR2 |= USART_CR2_STOP_0;
+			break;
+		}
+		case USART_STOPBIT_2: {
+			// Debemoscargar el valor 0b10 en los dos bits de STOP
+			ptrUsartHandler->ptrUSARTx->CR2 &= ~USART_CR2_STOP;
+			ptrUsartHandler->ptrUSARTx->CR2 |= USART_CR2_STOP_1;
+			break;
+		}
+		case USART_STOPBIT_1_5: {
+			// Debemoscargar el valor 0b11 en los dos bits de STOP
+			ptrUsartHandler->ptrUSARTx->CR2 |= USART_CR2_STOP;
+			break;
+		}
+		default: {
+			// En el caso por defecto seleccionamos 1 bit de parada
+			ptrUsartHandler->ptrUSARTx->CR2 &= ~USART_CR2_STOP;
+			break;
+		}
 	}
 
 	// 2.5 Configuracion del Baudrate (SFR USART_BRR)
-	// Ver tabla de valores (Tabla 73), Frec = 16MHz, overr = 0;
-	if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_9600){
-		// El valor a cargar es 104.1875 -> Mantiza = 104,fraction = 0.1875
-		// Mantiza = 104 = 0x68, fraction = 16 * 0.1875 = 3
-		// Valor a cargar 0x0683
-		// Configurando el Baudrate generator para una velocidad de 9600bps
-		ptrUsartHandler->ptrUSARTx->BRR = 0x0683;
-	}
+	switch(ptrUsartHandler->USART_Config.MCU_frequency){
+		case 16:{
+			// Ver tabla de valores (Tabla 73), Frec = 16MHz, overr = 0;
+			if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_9600){
+				// El valor a cargar es 104.1875 -> Mantiza = 104,fraction = 0.1875
+				// Mantiza = 104 = 0x68, fraction = 16 * 0.1875 = 3
+				// Valor a cargar 0x0683
+				// Configurando el Baudrate generator para una velocidad de 9600bps
+				ptrUsartHandler->ptrUSARTx->BRR = 0x0683;
+			}
 
-	else if (ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_19200) {
-		// El valor a cargar es 52.0625 -> Mantiza = 52,fraction = 0.0625
-		// Mantiza = 52 = 0x34, fraction = 16 * 0.1875 = 1
-		// Valor a cargar 0x0341
-		// Configurand el Baudrate generator para una velicudad de 19200bps
-		ptrUsartHandler->ptrUSARTx->BRR = 0x0341;
-	}
+			else if (ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_19200) {
+				// El valor a cargar es 52.0625 -> Mantiza = 52,fraction = 0.0625
+				// Mantiza = 52 = 0x34, fraction = 16 * 0.1875 = 1
+				// Valor a cargar 0x0341
+				// Configurand el Baudrate generator para una velicudad de 19200bps
+				ptrUsartHandler->ptrUSARTx->BRR = 0x0341;
+			}
 
-	else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_115200){
-		// Valor a cargar es 8.805
-		// Mantiza = 8 = 0x8, fraccion = 16 * 0.68056 = 11 = 0xB
-		// Valor a cargar 0x08B
-		// Configurando el baudrate generator para una velocidad de 115200bps
-		ptrUsartHandler->ptrUSARTx->BRR = 0x008B;
+			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_115200){
+				// Valor a cargar es 8.805
+				// Mantiza = 8 = 0x8, fraccion = 16 * 0.68056 = 11 = 0xB
+				// Valor a cargar 0x08B
+				// Configurando el baudrate generator para una velocidad de 115200bps
+				ptrUsartHandler->ptrUSARTx->BRR = 0x008B;
+			}
+			break;
+		}
+
+		case 80:{
+			// Frec = 80MHz, overr = 0;
+			if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_9600){
+				// El valor a cargar es 520,833
+				// Mantiza = 520 = 0x208, fraction = 16 * 0.8333 = 13 = 0xD
+				// Valor a cargar 0x208D
+				ptrUsartHandler->ptrUSARTx->BRR = 0x208D;
+			}
+			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_19200){
+				// El valor a cargar es 260,41666
+				// Mantiza = 260 = 0x104, fraction = 16 * 0,41666 = 7 = 0x7
+				// Valor a cargar 0x1047
+				ptrUsartHandler->ptrUSARTx->BRR = 0x1047;
+			}
+			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_115200){
+				// El valor a cargar es 43,40277
+				// Mantiza = 43 = 0x2B, fraction = 16 * 0,40277 = 7 = 0x7
+				// Valor a cargar 0x02B7
+				ptrUsartHandler->ptrUSARTx->BRR = 0x02B7;
+			}
+			break;
+		}
+
+		case 100:{
+			// Frec = 100MHz, overr = 0;
+			if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_9600){
+				// El valor a cargar es 651,0416
+				// Mantiza = 651 = 0x28B, fraction = 16 * 0.0416 = 1 = 0x1
+				// Valor a cargar 0x28B1
+				ptrUsartHandler->ptrUSARTx->BRR = 0x28B1;
+			}
+			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_19200){
+				// El valor a cargar es 325,52083
+				// Mantiza = 325 = 0x145, fraction = 16 * 0,52083 = 8 = 0x8
+				// Valor a cargar 0x1458
+				ptrUsartHandler->ptrUSARTx->BRR = 0x1458;
+			}
+			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_115200){
+				// El valor a cargar es 54,253472
+				// Mantiza = 54 = 0x36, fraction = 16 * 0,253472 = 4 = 0x4
+				// Valor a cargar 0x0364
+				ptrUsartHandler->ptrUSARTx->BRR = 0x0364;
+			}
+			break;
+		}
+		default:{
+			while(1){
+				/* Wrong frequency value*/
+				__NOP();
+			}
+		}
 	}
 
 	// 2.6 Configuramos el modo: TX only, RX only, RXTX, disable

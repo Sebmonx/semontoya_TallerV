@@ -131,7 +131,6 @@ void pwm_Config(PWM_Handler_t *ptrPwmHandler){
 		ptrPwmHandler->ptrTIMx->CCMR2 &= ~TIM_CCMR2_OC4CE;
 		break;
 	}
-
 	default:{
 		break;
 	}
@@ -188,31 +187,29 @@ void stopPwmSignal(PWM_Handler_t *ptrPwmHandler) {
 /* Función encargada de activar cada uno de los canales con los que cuenta el TimerX */
 void enableOutput(PWM_Handler_t *ptrPwmHandler) {
 	switch (ptrPwmHandler->config.channel) {
-	case PWM_CHANNEL_1: {
-		// Activamos la salida del canal 1
-		ptrPwmHandler->ptrTIMx->CCER |= TIM_CCER_CC1E;
-		break;
-	}
-
-	case PWM_CHANNEL_2: {
-		// Activamos la salida del canal 2
-	ptrPwmHandler->ptrTIMx->CCER |= TIM_CCER_CC2E;
-		break;
-	}
-	case PWM_CHANNEL_3: {
-		// Activamos la salida del canal 3
-	ptrPwmHandler->ptrTIMx->CCER |= TIM_CCER_CC3E;
-		break;
-	}
-	case PWM_CHANNEL_4: {
-		// Activamos la salida del canal 4
-	ptrPwmHandler->ptrTIMx->CCER |= TIM_CCER_CC4E;
-		break;
-	}
-
-	default: {
-		break;
-	}
+		case PWM_CHANNEL_1: {
+			// Activamos la salida del canal 1
+			ptrPwmHandler->ptrTIMx->CCER |= TIM_CCER_CC1E;
+			break;
+		}
+		case PWM_CHANNEL_2: {
+			// Activamos la salida del canal 2
+		ptrPwmHandler->ptrTIMx->CCER |= TIM_CCER_CC2E;
+			break;
+		}
+		case PWM_CHANNEL_3: {
+			// Activamos la salida del canal 3
+		ptrPwmHandler->ptrTIMx->CCER |= TIM_CCER_CC3E;
+			break;
+		}
+		case PWM_CHANNEL_4: {
+			// Activamos la salida del canal 4
+		ptrPwmHandler->ptrTIMx->CCER |= TIM_CCER_CC4E;
+			break;
+		}
+		default: {
+			break;
+		}
 	}
 }
 
@@ -231,16 +228,9 @@ void setFrequency(PWM_Handler_t *ptrPwmHandler){
 	// Cargamos el valor del ARR, el cual es el límite de incrementos del Timer
 	// antes de hacer un update y reload.
 	/* Reinicio de valores en autoreload según cantidad de bits */
-	if(ptrPwmHandler->ptrTIMx == TIM2 || ptrPwmHandler->ptrTIMx == TIM5){
-
-		/* Carga de período */
-		ptrPwmHandler->ptrTIMx->ARR = ptrPwmHandler->config.periodo;
-	} else {
-
-		/* Carga de período */
-		ptrPwmHandler->ptrTIMx->ARR = ptrPwmHandler->config.periodo;
-	}
-
+	ptrPwmHandler->ptrTIMx->ARR = 0;
+	/* Carga de período */
+	ptrPwmHandler->ptrTIMx->ARR = ptrPwmHandler->config.periodo;
 
 }
 
@@ -250,7 +240,7 @@ void updateFrequency(PWM_Handler_t *ptrPwmHandler, uint16_t newFreq){
 	// Actualizamos el registro que manipula el periodo
     ptrPwmHandler->config.periodo = (1/newFreq);
 
-	// Llamamos a la fucnión que cambia la frecuencia
+	// Llamamos a la función que cambia la frecuencia
 	setFrequency(ptrPwmHandler);
 }
 
@@ -259,68 +249,34 @@ void setDuttyCycle(PWM_Handler_t *ptrPwmHandler){
 
 	// Seleccionamos el canal para configurar su dutty
 	switch(ptrPwmHandler->config.channel){
-	case PWM_CHANNEL_1:{
-		/* Valor conocido */
-		ptrPwmHandler->ptrTIMx->CCR1 = 0;
-
-		/* Condicional para timers de 32 bits */
-		if(ptrPwmHandler->ptrTIMx == TIM2 || ptrPwmHandler->ptrTIMx == TIM5){
-
-			ptrPwmHandler->ptrTIMx->CCR1 = (uint32_t) ptrPwmHandler->config.duttyCicle;
-		} else {
+		case PWM_CHANNEL_1:{
+			/* Valor conocido */
+			ptrPwmHandler->ptrTIMx->CCR1 = 0;
 			ptrPwmHandler->ptrTIMx->CCR1 = ptrPwmHandler->config.duttyCicle;
+			break;
 		}
-		break;
-	}
-
-	case PWM_CHANNEL_2:{
-		/* Valor conocido */
-		ptrPwmHandler->ptrTIMx->CCR2 = 0;
-
-		/* Condicional para timers de 32 bits */
-		if(ptrPwmHandler->ptrTIMx == TIM2 || ptrPwmHandler->ptrTIMx == TIM5){
-
-			ptrPwmHandler->ptrTIMx->CCR2 = (uint32_t) ptrPwmHandler->config.duttyCicle;
-		} else {
+		case PWM_CHANNEL_2:{
+			/* Valor conocido */
+			ptrPwmHandler->ptrTIMx->CCR2 = 0;
 			ptrPwmHandler->ptrTIMx->CCR2= ptrPwmHandler->config.duttyCicle;
+			break;
 		}
-		break;
-	}
-
-	case PWM_CHANNEL_3:{
-		/* Valor conocido */
-		ptrPwmHandler->ptrTIMx->CCR3 = 0;
-
-		/* Condicional para timers de 32 bits */
-		if(ptrPwmHandler->ptrTIMx == TIM2 || ptrPwmHandler->ptrTIMx == TIM5){
-
-			ptrPwmHandler->ptrTIMx->CCR3 = (uint32_t) ptrPwmHandler->config.duttyCicle;
-		} else {
+		case PWM_CHANNEL_3:{
+			/* Valor conocido */
+			ptrPwmHandler->ptrTIMx->CCR3 = 0;
 			ptrPwmHandler->ptrTIMx->CCR3 = ptrPwmHandler->config.duttyCicle;
+			break;
 		}
-		break;
-	}
-
-	case PWM_CHANNEL_4:{
-		/* Valor conocido */
-		ptrPwmHandler->ptrTIMx->CCR4 = 0;
-
-		/* Condicional para timers de 32 bits */
-		if(ptrPwmHandler->ptrTIMx == TIM2 || ptrPwmHandler->ptrTIMx == TIM5){
-
-			ptrPwmHandler->ptrTIMx->CCR4 = (uint32_t) ptrPwmHandler->config.duttyCicle;
-		} else {
+		case PWM_CHANNEL_4:{
+			/* Valor conocido */
+			ptrPwmHandler->ptrTIMx->CCR4 = 0;
 			ptrPwmHandler->ptrTIMx->CCR4 = ptrPwmHandler->config.duttyCicle;
+			break;
 		}
-		break;
-	}
-
-
-	default:{
-		__NOP();
-		break;
-	}
-
+		default:{
+			__NOP();
+			break;
+		}
 	}// fin del switch-case
 
 }

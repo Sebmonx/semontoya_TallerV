@@ -47,6 +47,7 @@
  */
 typedef struct
 {
+	uint8_t MCU_frequency;
 	uint8_t USART_mode;
 	uint8_t USART_baudrate;
 	uint8_t USART_datasize;

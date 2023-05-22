@@ -18,10 +18,10 @@
 
 typedef struct
 {
-	uint8_t 	input_Clock; 	// Reloj a utilizar para la frecuencia del sistema
-	uint8_t 	m_Factor;		// Factor de división para VCO
-	uint16_t	n_Factor;		// Factor de multiplicación VCO
-	uint8_t 	p_Factor;		// Factor de división para salida PLL
+	uint8_t 	input_Clock; 		// Reloj a utilizar para la frecuencia del sistema
+	uint8_t 	m_Factor;			// Factor de división para VCO
+	uint16_t	n_Factor;			// Factor de multiplicación VCO
+	uint8_t 	p_Factor;			// Factor de división para salida PLL
 	uint8_t		final_Frequency;	// Variable para uso futuro, no necesita modificación
 } PLL_Config_t;
 
@@ -35,13 +35,12 @@ typedef struct
 } system_Clock_data;		// Estructura para guardar datos informativos sobre el reloj
 
 
-void PLL_custom_config(PLL_Config_t *ptrPLL);
-void PLL_100Mhz_Config(void);
-void PLL_16Mhz_Config(void);
+void PLL_config(PLL_Config_t *ptrPLL);
 void PLL_Frequency_Output(GPIO_Handler_t *ptrA8);
 void PLL_ON_forSystem(PLL_Config_t *ptrPLL);
-void systemClock_16MHz(void);
-void systemClock_100MHz(void);
+void systemClock_16MHz(PLL_Config_t *ptrPLL);
+void systemClock_80MHz(PLL_Config_t *ptrPLL);
+void systemClock_100MHz(PLL_Config_t *ptrPLL);
 void systemClock_Output(GPIO_Handler_t *ptrC9);
 void systemClock_GetConfig(system_Clock_data *ptrClockData);
 
