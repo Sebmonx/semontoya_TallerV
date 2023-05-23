@@ -2,7 +2,7 @@
  * USARTxDriver.c
  *
  *  Created on: Apr 6, 2022
- *      Author: namontoy
+ *      Author: Sebastian Montoya
  */
 
 #include <stm32f4xx.h>
@@ -27,6 +27,7 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
     /* 1.2 Configuramos el USART2 */
 	else if(ptrUsartHandler->ptrUSARTx == USART2){
 		RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+		ptrUsartHandler->USART_Config.MCU_frequency = ptrUsartHandler->USART_Config.MCU_frequency/2;
 	}
     
     /* 1.3 Configuramos el USART6 */

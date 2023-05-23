@@ -2,7 +2,7 @@
  * USARTxDriver.h
  *
  *  Created on: Apr 6, 2022
- *      Author: namontoy
+ *      Author: Sebastian Montoya
  */
 
 #include <stdio.h>

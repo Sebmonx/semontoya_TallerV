@@ -2,7 +2,7 @@
  * PwmDriver.c
  *
  *  Created on: XXXX , 2022
- *      Author: namontoy
+ *      Author: Sebastian Montoya
  */
 #include "PwmDriver.h"
 

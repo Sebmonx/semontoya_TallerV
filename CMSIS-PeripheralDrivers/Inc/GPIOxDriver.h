@@ -2,7 +2,7 @@
  * GPIO.h
  *
  *  Created on: 11/03/2023
- *      Author: semontoya
+ *      Author: Sebastian Montoya
  */
 
 #ifndef GPIOXDRIVER_H_

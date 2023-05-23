@@ -2,7 +2,7 @@
  * BasicTimer.h
  *
  *  Created on: Apr 18, 2022
- *      Author: namontoy
+ *      Author: Sebastian Montoya
  */
 
 #ifndef BASICTIMER_H_
@@ -17,15 +17,20 @@
 #define BTIMER_SPEED_100us	100
 #define BTIMER_SPEED_1ms	1000
 
+#define BITMER_SPEED_16Mhz_10us 	160
+#define BITMER_SPEED_16Mhz_100us	1600
+#define BITMER_SPEED_16Mhz_1ms		16000
+
+
 
 
 /* Estructura que contiene la configuración mínima necesaria para el manejo del Timer.*/
 typedef struct
 {
-	uint8_t 	MCU_frequency; 			// Frecuencia MCU en MHz
+	uint8_t 	APB1_frequency; 		// Frecuencia APB1 en MHz para TIM 2 a 5
 	uint8_t		TIMx_mode; 				// Up or dowm
 	uint32_t	TIMx_speed;				// A qué velocidad se incrementa el Timer
-	uint32_t	TIMx_period;			// Valor en ms del periodo del Timer
+	uint32_t	TIMx_period;			// Valor del periodo del Timer
 	uint8_t		TIMx_interruptEnable;	// Activa o desactiva el modo interrupción del timer.
 }BasicTimer_Config_t;
 

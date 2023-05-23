@@ -2,7 +2,7 @@
  * PLLDriver.c
  *
  *  Created on: May 6, 2023
- *      Author: smontoya
+ *      Author: Sebastian Montoya
  */
 
 #include "GPIOxDriver.h"
@@ -25,7 +25,7 @@ void PLL_config(PLL_Config_t *ptrPLL){
 
 	/* División de reloj principal para entrar a VCO */
 	/* Reinicio de bits en divisor /M*/
-	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLM_Msk;
+	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLM;
 
 	/* Divisón por M */
 	actual_Frequency = actual_Frequency/(ptrPLL->m_Factor);
@@ -43,7 +43,7 @@ void PLL_config(PLL_Config_t *ptrPLL){
 
 	/* Multiplicación de salida VCO (2MHz) a 200MHz */
 	/* Reinicio de bits xN */
-	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLN_Msk;
+	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLN;
 
 	/* Multiplicación por N */
 	actual_Frequency = actual_Frequency * (ptrPLL->n_Factor);
@@ -61,8 +61,32 @@ void PLL_config(PLL_Config_t *ptrPLL){
 
 	/* División de salida para sistema principal (200MHz) a 100MHz */
 	/* Reinicio de bits */
-	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLP_Msk;
+	RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLP;
 
+	switch(ptrPLL->p_Factor){
+		case 2:{
+			RCC->PLLCFGR &= ~RCC_PLLCFGR_PLLP;
+			break;
+		}
+		case 4:{
+			RCC->PLLCFGR |= 1 << RCC_PLLCFGR_PLLP_Pos;
+			break;
+		}
+		case 6:{
+			RCC->PLLCFGR |= 2 << RCC_PLLCFGR_PLLP_Pos;
+			break;
+		}
+		case 8:{
+			RCC->PLLCFGR |= 3 << RCC_PLLCFGR_PLLP_Pos;
+			break;
+		}
+		default:{
+			while(1){
+				// Worong P factor
+				__NOP();
+			}
+		}
+	}
 	/* División por P */
 	actual_Frequency = actual_Frequency/(ptrPLL->p_Factor);
 	// No configurar si supera los límites
@@ -72,8 +96,6 @@ void PLL_config(PLL_Config_t *ptrPLL){
 			__NOP();
 		}
 	}
-	// Configurar factor P
-	RCC->PLLCFGR |= (2 << RCC_PLLCFGR_PLLN_Pos);
 
 	/* Guardar frecuencia final configurada */
 	ptrPLL->final_Frequency = actual_Frequency;
@@ -222,15 +244,43 @@ void systemClock_GetConfig(system_Clock_data *ptrClockData){
 
 	/* Frecuencia actual en reloj */
 	uint8_t factor_aux = 0;
+
 	// Definir y dividir Factor M
 	factor_aux = (RCC->PLLCFGR & RCC_PLLCFGR_PLLM)>> RCC_PLLCFGR_PLLM_Pos; // Definir Factor M
 	ptrClockData->clock_Frequency = 16/factor_aux;
+	factor_aux = 0;
+
 	// Definir y multiplicar Factor N
 	factor_aux = (RCC->PLLCFGR & RCC_PLLCFGR_PLLN)>> RCC_PLLCFGR_PLLN_Pos;
 	ptrClockData->clock_Frequency = (ptrClockData->clock_Frequency)*factor_aux;
+	factor_aux = 0;
+
 	// Definir y dividir Factor P
 	factor_aux = (RCC->PLLCFGR & RCC_PLLCFGR_PLLP)>> RCC_PLLCFGR_PLLP_Pos;
+	switch(factor_aux){
+		case 0:{
+			factor_aux = 2;
+			break;
+		}
+		case 1:{
+			factor_aux = 4;
+			break;
+		}
+		case 2:{
+			factor_aux = 6;
+			break;
+		}
+		case 3:{
+			factor_aux = 8;
+			break;
+		}
+		default:{
+			__NOP();
+			break;
+		}
+	}
 	ptrClockData->clock_Frequency = (ptrClockData->clock_Frequency)/factor_aux;
+
 
 	/* Frecuencia APB1 */
 	switch(RCC->CFGR & RCC_CFGR_PPRE1){

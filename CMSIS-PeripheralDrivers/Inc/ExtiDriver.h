@@ -2,7 +2,7 @@
  * ExtiDriver.h
  *
  *  Created on: May 10, 2022
- *      Author: namontoy
+ *      Author: Sebastian Montoya
  */
 
 #ifndef EXTIDRIVER_H_

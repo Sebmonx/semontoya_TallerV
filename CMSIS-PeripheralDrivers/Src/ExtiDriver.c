@@ -2,7 +2,7 @@
  * ExtiDriver.c
  *
  *  Created on: 29/03/2023
- *      Author: karol
+ *      Author: Sebastian Montoya
  */
 
 #include "ExtiDriver.h"

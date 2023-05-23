@@ -2,7 +2,7 @@
  * I2CDriver.c
  *
  *  Created on: 10/05/2023
- *      Author: if420_01
+ *      Author: Sebastian Montoya
  */
 
 #include <stdint.h>

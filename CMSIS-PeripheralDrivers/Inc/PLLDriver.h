@@ -2,7 +2,7 @@
  * PLLDriver.h
  *
  *  Created on: May 6, 2023
- *      Author: smontoya
+ *      Author: Sebastian Montoya
  */
 
 #ifndef PLLDRIVER_H_
