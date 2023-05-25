@@ -17,17 +17,17 @@
 #define BTIMER_SPEED_100us	100
 #define BTIMER_SPEED_1ms	1000
 
+#define BTIMER_SPEED_80Mhz_100us	8085
+
 #define BITMER_SPEED_16Mhz_10us 	160
 #define BITMER_SPEED_16Mhz_100us	1600
 #define BITMER_SPEED_16Mhz_1ms		16000
 
 
 
-
 /* Estructura que contiene la configuración mínima necesaria para el manejo del Timer.*/
 typedef struct
 {
-	uint8_t 	APB1_frequency; 		// Frecuencia APB1 en MHz para TIM 2 a 5
 	uint8_t		TIMx_mode; 				// Up or dowm
 	uint32_t	TIMx_speed;				// A qué velocidad se incrementa el Timer
 	uint32_t	TIMx_period;			// Valor del periodo del Timer

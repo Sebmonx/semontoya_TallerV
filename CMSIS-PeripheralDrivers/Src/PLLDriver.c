@@ -9,9 +9,10 @@
 #include "PLLDriver.h"
 #include <string.h>
 
+uint8_t actual_Frequency = 0;
 
 void PLL_config(PLL_Config_t *ptrPLL){
-	uint8_t actual_Frequency = 16;
+	actual_Frequency = 16;
 
 	/* Asegurar que el PLL está apagado para configuración */
 	RCC->CR &= ~RCC_CR_PLLON;

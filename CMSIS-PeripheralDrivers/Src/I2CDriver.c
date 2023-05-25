@@ -104,13 +104,13 @@ void i2c_reStartTransaction(I2C_Handler_t *ptrHandlerI2C){
 /* Indicación ACK a esclavo */
 void i2c_sendAck(I2C_Handler_t *ptrHandlerI2C){
 	/* Escribir 0 en ACK de CR1 */
-	ptrHandlerI2C->ptrI2Cx->CR1 &= ~I2C_CR1_ACK;
+	ptrHandlerI2C->ptrI2Cx->CR1 |= I2C_CR1_ACK;
 }
 
 /* Indicación NACK a esclavo*/
 void i2c_sendNoAck(I2C_Handler_t *ptrHandlerI2C){
 	/* Escribir 1 en ACK de CR1 */
-	ptrHandlerI2C->ptrI2Cx->CR1 |= I2C_CR1_ACK;
+	ptrHandlerI2C->ptrI2Cx->CR1 &= ~I2C_CR1_ACK;
 }
 
 /* */
@@ -164,6 +164,7 @@ uint8_t i2c_readDataByte(I2C_Handler_t *ptrHandlerI2C){
 }
 
 uint8_t i2c_readSingleRegister(I2C_Handler_t *ptrHandlerI2C, uint8_t registerToRead){
+
 	uint8_t auxRead = 0;
 
 	/* Generar condicion de inicio */
@@ -193,4 +194,19 @@ uint8_t i2c_readSingleRegister(I2C_Handler_t *ptrHandlerI2C, uint8_t registerToR
 	return auxRead;
 }
 
+void i2c_writeSingleRegister(I2C_Handler_t *ptrHandlerI2C, uint8_t regToRead, uint8_t newValue){
+	/* Generamos la condición de start */
+	i2c_startTransaction(ptrHandlerI2C);
 
+	/* Enviamos dirección del esclavo y la acción de ESCRIBIR */
+	i2c_sendSlaveAddressRW(ptrHandlerI2C, ptrHandlerI2C->slaveAddress, I2C_WRITE_DATA);
+
+	/* Enviar dirección de memoria donde se desea escribir */
+	i2c_sendMemoryAddress(ptrHandlerI2C, regToRead);
+
+	/* Enviar valor que se desea escribir */
+	i2c_sendDataByte(ptrHandlerI2C, newValue);
+
+	/* Enviar condición de parada */
+	i2c_stopTransaction(ptrHandlerI2C);
+}

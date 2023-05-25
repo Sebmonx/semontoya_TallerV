@@ -10,6 +10,10 @@
 #ifndef USARTXDRIVER_H_
 #define USARTXDRIVER_H_
 
+#define USART_1		1
+#define USART_2		2
+#define USART_6		6
+
 #define USART_MODE_TX		0
 #define USART_MODE_RX		1
 #define USART_MODE_RXTX		2
@@ -84,12 +88,19 @@ typedef struct
 void callback_USART1_RX(void);
 void callback_USART2_RX(void);
 void callback_USART6_RX(void);
-
+void callback_USART1_TX(void);
+void callback_USART2_TX(void);
+void callback_USART6_TX(void);
 
 /* Definicion de los prototipos para las funciones del USART */
 uint8_t get_data_RX (void);
 void USART_Config(USART_Handler_t *ptrUsartHandler);
 int writeChar(USART_Handler_t *ptrUsartHandler, int dataToSend );
-void writeWord(USART_Handler_t *ptrUsartHandler, char *word);
+void writeMsg(USART_Handler_t *ptrUsartHandler, char *word);
+
+void interruptWriteChar(USART_Handler_t *ptrUsartHandler, char caracter);
+void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word);
+
+
 
 #endif /* USARTXDRIVER_H_ */

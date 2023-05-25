@@ -1,20 +1,10 @@
-/**
- ******************************************************************************
- * @file           : main.c
- * @author         : Sebastian Montoya
- * @brief          : Main program body
- ******************************************************************************
- * @attention
+/*
+ * timer.c
  *
- * Copyright (c) 2023 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
+ *  Created on: May 25, 2023
+ *      Author: Sebastian Montoya
  */
+
 
 #include <stdint.h>
 #include "BasicTimer.h"
@@ -26,7 +16,9 @@
 #include "SysTickDriver.h"
 #include "USARTxDriver.h"
 
+
 #define TIMER_80Mhz_100us 8100
+
 
 /* Handlers */
 // PWM
@@ -45,6 +37,7 @@ GPIO_Handler_t blinkyLed = {0};
 // PLL
 PLL_Config_t config_PLL = {0};
 system_Clock_data data_Reloj = {0};
+GPIO_Handler_t systemOutput = {0};
 
 // I2C
 GPIO_Handler_t pinSCL_handler = {0};
@@ -82,26 +75,14 @@ int main(void)
 	//SCB->CPACR |= (0xF << 20);
 	systemClock_80MHz(&config_PLL);
 
-	char dataToSend = 'd';
-	char mensaje[64] = "Prueba";
 
 	inicializacion_Led_Estado_80Mhz();
-	inicializacion_pines_USART();
+	systemClock_Output(&systemOutput);
 
 
     /* Loop forever */
 	while(1){
-		if(timer > 4){
 
-			interruptWriteChar(&USART2_handler,dataToSend);
-			interruptWriteChar(&USART2_handler, data_recibida_USART2);
-			interruptWriteMsg(&USART2_handler, mensaje);
-//			writeChar(&USART2_handler, dataToSend);
-//			writeChar(&USART2_handler,data_recibida_USART2);
-			//writeWord(&USART2_handler, mensaje);
-			data_recibida_USART2 = '\0';
-			timer = 0;
-		}
 
 	}
 

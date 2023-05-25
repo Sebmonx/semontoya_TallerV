@@ -61,16 +61,7 @@ void BasicTimer_Config(BasicTimer_Handler_t *ptrBTimerHandler){
 	 * periodo_incremento * veces_incremento_counter = periodo_update
 	 * Modificar el valor del registro PSC en el TIM utilizado */
 
-
-	while(ptrBTimerHandler->TIMx_Config.APB1_frequency< 1 || ptrBTimerHandler->TIMx_Config.APB1_frequency > 100){
-		// Confirmar la selección de frecuencia del APB1
-		__NOP();
-	}
-	/* Variable para escoger el valor correcto a poner en el
-	 * prescaler dependiendo de la frecuencia que se configuró
-	 * para el microcontrolador */
-	uint32_t varAux = (ptrBTimerHandler->TIMx_Config.APB1_frequency)*(ptrBTimerHandler->TIMx_Config.TIMx_speed);
-	ptrBTimerHandler->ptrTIMx->PSC = varAux - 1;
+	ptrBTimerHandler->ptrTIMx->PSC = ptrBTimerHandler->TIMx_Config.TIMx_speed;
 
 	/* 3. Configuramos la dirección del counter (up/down)*/
 	if(ptrBTimerHandler->TIMx_Config.TIMx_mode == BTIMER_MODE_UP){

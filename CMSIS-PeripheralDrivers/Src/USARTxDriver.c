@@ -6,10 +6,20 @@
  */
 
 #include <stm32f4xx.h>
+#include <string.h>
 #include "USARTxDriver.h"
+#include "PLLDriver.h"
+
+#define CHAR 0
+#define WORD 1
 
 uint8_t auxiliar_data_RX = 0;
+uint8_t auxiliar_data_TX = 0;
+uint8_t usart_num = 0;
 
+uint8_t dataType = 0;
+char dataToSend = 0;
+char mensaje[64];
 /**
  * Configurando el puerto Serial...
  * Recordar que siempre se debe comenzar con activar la señal de reloj
@@ -27,7 +37,12 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
     /* 1.2 Configuramos el USART2 */
 	else if(ptrUsartHandler->ptrUSARTx == USART2){
 		RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
-		ptrUsartHandler->USART_Config.MCU_frequency = ptrUsartHandler->USART_Config.MCU_frequency/2;
+		if(ptrUsartHandler->USART_Config.MCU_frequency > 50){
+			ptrUsartHandler->USART_Config.MCU_frequency = ptrUsartHandler->USART_Config.MCU_frequency/2;
+		}
+		else {
+		ptrUsartHandler->USART_Config.MCU_frequency = ptrUsartHandler->USART_Config.MCU_frequency;
+		}
 	}
     
     /* 1.3 Configuramos el USART6 */
@@ -134,6 +149,20 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 			break;
 		}
 
+		case 40:{
+			// Frec = 40MHz, overr = 0;
+			if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_9600){
+				ptrUsartHandler->ptrUSARTx->BRR = 0x1047;
+			}
+			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_19200){
+				ptrUsartHandler->ptrUSARTx->BRR = 0x0823;
+			}
+			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_115200){
+				ptrUsartHandler->ptrUSARTx->BRR = 0x15B;
+			}
+			break;
+		}
+
 		case 80:{
 			// Frec = 80MHz, overr = 0;
 			if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_9600){
@@ -233,16 +262,35 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_UE;
 	}
 
-
+	// Desactivar interrupciones globales
+	__disable_irq();
 
 	// Chequeo de activación de interrupción en recepción
 	if(ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_RX_ENABLE){
-		// Desactivar interrupciones globales
-		__disable_irq();
 
 		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
 		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_RXNEIE;
 
+
+
+		/* Se vuelve a encender las interrupciones globales */
+		__enable_irq();
+
+	} else {
+		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
+	}
+
+	// Chequeo activación de interrupción para transmisión
+	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE){
+
+		ptrUsartHandler->ptrUSARTx->CR1 &= ~USART_CR1_TXEIE;
+		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
+
+	} else {
+		ptrUsartHandler->ptrUSARTx->CR1 &= ~USART_CR1_TXEIE;
+	}
+
+	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE || ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_RX_ENABLE){
 		// Matriculamos la interrupción en el NVIC
 		if(ptrUsartHandler->ptrUSARTx == USART1){
 			__NVIC_EnableIRQ(USART1_IRQn);
@@ -256,14 +304,119 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 		else {
 			__NOP();
 		}
-
-		/* Se vuelve a encender las interrupciones globales */
-		__enable_irq();
-
-	} else {
-		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
 	}
 
+	/* Se vuelve a encender las interrupciones globales */
+	__enable_irq();
+
+}
+
+
+void USART1_IRQHandler(void){
+	// Evaluacion de la interrupcion en USART1 RX
+	if(USART1->SR & USART_SR_RXNE){
+		// Se debe guardar la informacion del DR a cual variable? No entendi la funcion con el auxVar
+		auxiliar_data_RX = (uint8_t) USART1->DR;
+		// Llamar al callback
+		callback_USART1_RX();
+	}
+	else if(USART2->SR & USART_SR_TXE){
+		if(dataType == CHAR){
+			USART1->DR = dataToSend;
+			USART1->CR1 &= ~USART_CR1_TXEIE;
+		} else {
+			uint8_t i = 0;
+			while(mensaje[i]){
+				USART1->DR = mensaje[i];
+				i++;
+			}
+			USART1->CR1 &= ~USART_CR1_TXEIE;
+		}
+	}
+}
+
+void USART2_IRQHandler(void){
+	if(USART2->SR & USART_SR_RXNE){
+		auxiliar_data_RX = (uint8_t) USART2->DR;
+		callback_USART2_RX();
+	}
+	else if(USART2->SR & USART_SR_TXE){
+		if(dataType == CHAR){
+			USART2->DR = dataToSend;
+			USART2->CR1 &= ~USART_CR1_TXEIE;
+		} else {
+			uint8_t i = 0;
+			while(mensaje[i]){
+				USART2->DR = mensaje[i];
+				i++;
+			}
+			USART2->CR1 &= ~USART_CR1_TXEIE;
+		}
+	}
+}
+
+void USART6_IRQHandler(void){
+	if(USART6->SR & USART_SR_RXNE){
+		auxiliar_data_RX = (uint8_t) USART6->DR;
+		callback_USART6_RX();
+	}
+	if(dataType == CHAR){
+		USART6->DR = dataToSend;
+		USART6->CR1 &= ~USART_CR1_TXEIE;
+	} else {
+		uint8_t i = 0;
+		while(mensaje[i]){
+			USART6->DR = mensaje[i];
+			i++;
+		}
+		USART6->CR1 &= ~USART_CR1_TXEIE;
+	}
+}
+
+uint8_t get_data_RX (void){
+	return auxiliar_data_RX;
+}
+
+/* funcion para escribir un solo char */
+int writeChar(USART_Handler_t *ptrUsartHandler, int caracter){
+	// Chequeo de registro vacío para el envío
+	while(!(ptrUsartHandler->ptrUSARTx->SR & USART_SR_TXE)){
+		__NOP();
+	}
+
+	ptrUsartHandler->ptrUSARTx->DR = caracter;
+	return caracter;
+}
+
+void writeMsg(USART_Handler_t *ptrUsartHandler, char *word){
+	// Chequeo de registro vacío para el envío
+	while(!(ptrUsartHandler->ptrUSARTx->SR & USART_SR_TXE)){
+		__NOP();
+	}
+
+	char dataToSend = 0;
+	int i = 0;
+	while(word[i]){
+		dataToSend = word[i];
+		writeChar(ptrUsartHandler, dataToSend);
+		i++;
+	}
+}
+
+void interruptWriteChar(USART_Handler_t *ptrUsartHandler, char caracter){
+	dataType = CHAR;
+	dataToSend = caracter;
+	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE){
+		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
+	}
+}
+
+void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word){
+	dataType = WORD;
+	strcpy(mensaje, word);
+	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE){
+		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
+	}
 }
 
 __attribute__ ((weak)) void callback_USART1_RX(void){
@@ -278,62 +431,15 @@ __attribute__ ((weak)) void callback_USART6_RX(void){
 	__NOP();
 }
 
-
-void USART1_IRQHandler(void){
-	// Evaluacion de la interrupcion en USART1 RX
-	if(USART1->SR & USART_SR_RXNE){
-		// Bajar bandera en interrupción USART1 RX?
-
-		// Se debe guardar la informacion del DR a cual variable? No entendi la funcion con el auxVar
-		auxiliar_data_RX = (uint8_t) USART1->DR;
-		// Llamar al callback
-		callback_USART1_RX();
-	}
+__attribute__ ((weak)) void callback_USART1_TX(void){
+	__NOP();
 }
 
-void USART2_IRQHandler(void){
-	if(USART2->SR & USART_SR_RXNE){
-		auxiliar_data_RX = (uint8_t) USART2->DR;
-		callback_USART2_RX();
-	}
+__attribute__ ((weak)) void callback_USART2_TX(void){
+	__NOP();
 }
 
-void USART6_IRQHandler(void){
-	if(USART6->SR & USART_SR_RXNE){
-		auxiliar_data_RX = (uint8_t) USART6->DR;
-		callback_USART6_RX();
-	}
+__attribute__ ((weak)) void callback_USART6_TX(void){
+	__NOP();
 }
 
-uint8_t get_data_RX (void){
-	return auxiliar_data_RX;
-}
-
-
-
-/* funcion para escribir un solo char */
-int writeChar(USART_Handler_t *ptrUsartHandler, int dataToSend ){
-	// Chequeo de registro vacío para el envío
-	while(!(ptrUsartHandler->ptrUSARTx->SR & USART_SR_TXE)){
-		__NOP();
-	}
-
-	ptrUsartHandler->ptrUSARTx->DR = dataToSend;
-
-	return dataToSend;
-}
-
-void writeWord(USART_Handler_t *ptrUsartHandler, char *word){
-	// Chequeo de registro vacío para el envío
-	while(!(ptrUsartHandler->ptrUSARTx->SR & USART_SR_TXE)){
-		__NOP();
-	}
-
-	char dataToSend = 0;
-	int i = 0;
-	while(word[i]){
-		dataToSend = word[i];
-		writeChar(ptrUsartHandler, dataToSend);
-		i++;
-	}
-}

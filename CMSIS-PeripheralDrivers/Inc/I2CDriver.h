@@ -16,6 +16,7 @@
 #define MAIN_CLOCK_4_MHz_FOR_I2C	4
 #define MAIN_CLOCK_16_MHz_FOR_I2C	16
 #define MAIN_CLOCK_20_MHz_FOR_I2C	20
+#define APB1_CLOCK_40MHz_FOR_I2C 	40
 
 #define I2C_MODE_SM		0
 #define I2C_MODE_FM		1
@@ -46,6 +47,8 @@ void i2c_sendSlaveAddressRW(I2C_Handler_t *ptrHandlerI2C, uint8_t slaveAddress, 
 void i2c_sendMemoryAddress(I2C_Handler_t *ptrHandlerI2C, uint8_t memoryAddress);
 void i2c_sendDataByte(I2C_Handler_t *ptrHandlerI2C, uint8_t dataToWrite);
 uint8_t i2c_readDataByte(I2C_Handler_t *ptrHandlerI2C);
+uint8_t i2c_readSingleRegister(I2C_Handler_t *ptrHandlerI2C, uint8_t registerToRead);
+void i2c_writeSingleRegister(I2C_Handler_t *ptrHandlerI2C, uint8_t regToRead, uint8_t newValue);
 
 
 
