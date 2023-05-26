@@ -23,6 +23,9 @@
 #define BITMER_SPEED_16Mhz_100us	1600
 #define BITMER_SPEED_16Mhz_1ms		16000
 
+#define BTIMER_INTERRUPT_DISABLE 	0
+#define BTIMER_INTERRUPT_ENABLE 	1
+
 
 
 /* Estructura que contiene la configuración mínima necesaria para el manejo del Timer.*/

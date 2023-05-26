@@ -23,6 +23,8 @@
 #include "PwmDriver.h"
 #include "SysTickDriver.h"
 #include "USARTxDriver.h"
+#include "AcelerometroDriver.h"
+
 
 /* Definción de Variable */
 GPIO_Handler_t BlinkyPin = {0};
@@ -42,6 +44,7 @@ GPIO_Handler_t I2cSDA = {0};
 GPIO_Handler_t I2cSCL = {0};
 I2C_Handler_t Accelerometer = {0};
 uint8_t i2cBuffer = {0};
+uint8_t x_count = 0;
 
 #define ACCEL_ADDRESS          	 0x1D
 #define ACCEL_XOUT_L             50
@@ -63,7 +66,8 @@ int main (void)
 //	i2c_writeSingleRegister(&Accelerometer, POWER_CTL , 0x2D);
 
 	//Imprimir un mensaje de inicio
-	writeMsg(&CommTerminal, bufferData);
+//	writeMsg(&CommTerminal, bufferData);
+	inicializacion_AXL345(&CommTerminal,&Accelerometer);
 
 	while(1){
 
@@ -74,7 +78,7 @@ int main (void)
 			if(rxData == 'w'){
 				sprintf(bufferData, "WHO_AM_I? (r)\n");
 				//writeMsg(&CommTerminal, bufferData);
-				interruptWriteChar(&CommTerminal, &bufferData);
+				interruptWriteChar(&CommTerminal, bufferData);
 				i2cBuffer = i2c_readSingleRegister(&Accelerometer, WHO_AM_I);
 				sprintf(bufferData, "dataRead = 0x%x \n", (unsigned int) i2cBuffer);
 				writeMsg(&CommTerminal, bufferData);
@@ -97,15 +101,16 @@ int main (void)
 				rxData = '\0';
 			}
 			else if (rxData == 'x'){
-				sprintf(bufferData, "Axis X data (r) \n");
-				writeMsg(&CommTerminal, bufferData);
+				single_data_X(&CommTerminal,&Accelerometer,NULL, x_count);
+//				sprintf(bufferData, "Axis X data (r) \n");
+//				writeMsg(&CommTerminal, bufferData);
 
-				uint8_t AccelX_low =  i2c_readSingleRegister(&Accelerometer, ACCEL_XOUT_L);
-				uint8_t AccelX_high = i2c_readSingleRegister(&Accelerometer, ACCEL_XOUT_H);
-				int16_t AccelX = AccelX_high << 8 | AccelX_low;
-				float ValorX = AccelX*(0.0039*9.8);
-				sprintf(bufferData, "AccelX = %.2f \n", ValorX);
-				writeMsg(&CommTerminal, bufferData);
+//				uint8_t AccelX_low =  i2c_readSingleRegister(&Accelerometer, ACCEL_XOUT_L);
+//				uint8_t AccelX_high = i2c_readSingleRegister(&Accelerometer, ACCEL_XOUT_H);
+//				int16_t AccelX = AccelX_high << 8 | AccelX_low;
+//				float ValorX = AccelX*(0.0039*9.8);
+//				sprintf(bufferData, "AccelX = %.2f \n", ValorX);
+//				writeMsg(&CommTerminal, bufferData);
 				rxData = '\0';
 			}
 			else if(rxData == 'y'){

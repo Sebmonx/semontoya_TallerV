@@ -15,6 +15,8 @@
 #include "PwmDriver.h"
 #include "SysTickDriver.h"
 #include "USARTxDriver.h"
+#include "AcelerometroDriver.h"
+
 
 #define TIMER_80Mhz_100us 8100
 #define TIMER_16Mhz_100us 1600
@@ -49,12 +51,13 @@ char data_recibida_USART6 = 0;
 char data_recibida_USART2 = 0;
 int timer = 0;
 
+
 /* ######### */
 
 
 /* Funciones inicialización */
 void inicializacion_Led_Estado_80Mhz(void);
-void inicializacion_pines_USART(void);
+void inicializacion_pines_USART2(void);
 void inicializacion_PWM(void);
 void inicializacion_Led_Estado(void);
 
@@ -64,7 +67,8 @@ void inicializacion_Led_Estado(void);
 /* ############### */
 
 int main(void){
-
+	inicializacion_Led_Estado();
+	inicializacion_pines_USART2();
 	while(1){
 
 	}

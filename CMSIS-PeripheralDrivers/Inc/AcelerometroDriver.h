@@ -9,6 +9,10 @@
 #define ACELEROMETRODRIVER_H_
 
 #include "stm32f4xx.h"
+#include "USARTxDriver.h"
+#include "I2CDriver.h"
+#include "BasicTimer.h"
+
 
 #define AXL345_ADDRESS	0x1D //Acelerometro AXL345
 #define ACCEL_XOUT_L	50
@@ -23,20 +27,29 @@
 #define ACCEL_ID  		0
 
 #define DATA_BUFFER		64
-#define BIGDATA_BUFFER	6002
+#define BIGDATA_BUFFER	6500
 
+#define STANDARD_DATA		0
+#define XYZ_CONSTANT_DATA 	1
 
 typedef struct{
-	float independent_X_Data[DATA_BUFFER];
-	float independent_Y_Data[DATA_BUFFER];
-	float independent_Z_Data[DATA_BUFFER];
+	float independent_X_Data[BIGDATA_BUFFER];
+	float independent_Y_Data[BIGDATA_BUFFER];
+	float independent_Z_Data[BIGDATA_BUFFER];
 }axis_Data_t;
 
-typedef struct{
-	float big_X_data[BIGDATA_BUFFER];
-	float big_Y_data[BIGDATA_BUFFER];
-	float big_Z_data[BIGDATA_BUFFER];
-}axis_BigData_t;
 
+
+void inicializacion_AXL345(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler);
+void single_data_X(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
+					axis_Data_t *single_Data_archive, uint8_t x_count);
+void single_data_Y(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
+					axis_Data_t *single_Data_archive, uint8_t y_count);
+void single_data_Z(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
+					axis_Data_t *single_Data_archive, uint8_t z_count);
+
+void device_ID(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler);
+void read_PowerMode(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler);
+void measure_Mode_config(I2C_Handler_t *accel_handler);
 
 #endif /* ACELEROMETRODRIVER_H_ */

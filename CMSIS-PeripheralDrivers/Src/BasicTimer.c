@@ -160,18 +160,18 @@ void TIM2_IRQHandler(void){
 
 void TIM3_IRQHandler(void){
 	TIM3->SR &= ~TIM_SR_UIF; 	// Limpiar bandera
-	BasicTimer3_Callback();				// Llamar funcion
+	BasicTimer3_Callback();		// Llamar funcion
 
 }
 
 void TIM4_IRQHandler(void){
 	TIM4->SR &= ~TIM_SR_UIF; 	// Limpiar bandera
-	BasicTimer4_Callback();				// Llamar funcion
+	BasicTimer4_Callback();		// Llamar funcion
 
 }
 
 void TIM5_IRQHandler(void){
 	TIM5->SR &= ~TIM_SR_UIF; 	// Limpiar bandera
-	BasicTimer5_Callback();				// Llamar funcion
+	BasicTimer5_Callback();		// Llamar funcion
 
 }
