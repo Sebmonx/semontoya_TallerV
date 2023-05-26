@@ -12,8 +12,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-
+#include <float.h>
 #include <stdint.h>
+
 #include "BasicTimer.h"
 #include "ExtiDriver.h"
 #include "GPIOxDriver.h"
@@ -43,12 +44,12 @@ I2C_Handler_t Accelerometer = {0};
 uint8_t i2cBuffer = {0};
 
 #define ACCEL_ADDRESS          	 0x1D
-#define ACCEL_XOUT_H             50
-#define ACCEL_XOUT_L             51
-#define ACCEL_YOUT_H             52
-#define ACCEL_YOUT_L             53
-#define ACCEL_ZOUT_H             54
-#define ACCEL_ZOUT_L             55
+#define ACCEL_XOUT_L             50
+#define ACCEL_XOUT_H             51
+#define ACCEL_YOUT_L             52
+#define ACCEL_YOUT_H             53
+#define ACCEL_ZOUT_L             54
+#define ACCEL_ZOUT_H             55
 
 #define POWER_CTL                45
 #define WHO_AM_I                 0
@@ -72,8 +73,8 @@ int main (void)
 
 			if(rxData == 'w'){
 				sprintf(bufferData, "WHO_AM_I? (r)\n");
-				writeMsg(&CommTerminal, bufferData);
-
+				//writeMsg(&CommTerminal, bufferData);
+				interruptWriteChar(&CommTerminal, bufferData);
 				i2cBuffer = i2c_readSingleRegister(&Accelerometer, WHO_AM_I);
 				sprintf(bufferData, "dataRead = 0x%x \n", (unsigned int) i2cBuffer);
 				writeMsg(&CommTerminal, bufferData);
@@ -102,7 +103,8 @@ int main (void)
 				uint8_t AccelX_low =  i2c_readSingleRegister(&Accelerometer, ACCEL_XOUT_L);
 				uint8_t AccelX_high = i2c_readSingleRegister(&Accelerometer, ACCEL_XOUT_H);
 				int16_t AccelX = AccelX_high << 8 | AccelX_low;
-				sprintf(bufferData, "AccelX = %d \n", (int) AccelX);
+				float ValorX = AccelX*(0.0039*9.8);
+				sprintf(bufferData, "AccelX = %.2f \n", ValorX);
 				writeMsg(&CommTerminal, bufferData);
 				rxData = '\0';
 			}
@@ -112,7 +114,8 @@ int main (void)
 				uint8_t AccelY_low = i2c_readSingleRegister(&Accelerometer, ACCEL_YOUT_L);
 				uint8_t AccelY_high = i2c_readSingleRegister(&Accelerometer,ACCEL_YOUT_H);
 				uint16_t AccelY = AccelY_high << 8 | AccelY_low;
-				sprintf(bufferData, "AccelY = %d \n", (int) AccelY);
+				float ValorY = AccelY*(0.0039*9.8);
+				sprintf(bufferData, "AccelY = %.2f \n", ValorY);
 				writeMsg(&CommTerminal, bufferData);
 				rxData = '\0';
 			}
@@ -123,7 +126,8 @@ int main (void)
 				uint8_t AccelZ_low = i2c_readSingleRegister(&Accelerometer, ACCEL_ZOUT_L);
 				uint8_t AccelZ_high = i2c_readSingleRegister(&Accelerometer, ACCEL_ZOUT_H);
 				uint16_t AccelZ = AccelZ_high << 8 | AccelZ_low;
-				sprintf(bufferData, "AccelZ = %d \n", (int)AccelZ);
+				float ValorZ = AccelZ * (0.0039*9.8);
+				sprintf(bufferData, "AccelZ = %.2f \n", ValorZ);
 				writeMsg(&CommTerminal, bufferData);
 				rxData = '\0';
 			}
@@ -184,17 +188,16 @@ void initSystem(void){
 	CommTerminal.USART_Config.USART_stopbits           = USART_STOPBIT_1;
 	CommTerminal.USART_Config.USART_mode               = USART_MODE_RXTX;
 	CommTerminal.USART_Config.USART_enableIntRX        = 1;
-	CommTerminal.USART_Config.USART_enableIntTX        = 0;
+	CommTerminal.USART_Config.USART_enableIntTX        = 1;
 	CommTerminal.USART_Config.MCU_frequency			   = 16;
 	USART_Config(&CommTerminal);
 
 	//Configuracion de los timers
 	BlinkyTimer.ptrTIMx                              = TIM2;
 	BlinkyTimer.TIMx_Config.TIMx_mode                = BTIMER_MODE_UP;
-	BlinkyTimer.TIMx_Config.TIMx_speed               = BTIMER_SPEED_100us;
+	BlinkyTimer.TIMx_Config.TIMx_speed               = 1610;
 	BlinkyTimer.TIMx_Config.TIMx_period              = 2500;
 	BlinkyTimer.TIMx_Config.TIMx_interruptEnable     = 1;
-	BlinkyTimer.TIMx_Config.APB1_frequency 			 = 16;
 	BasicTimer_Config(&BlinkyTimer);
 
 	//Configuración I2C

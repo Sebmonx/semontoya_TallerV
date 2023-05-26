@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include "I2CDriver.h"
+#include "PLLDriver.h"
 
 /* Se deben configurar los pines para SDA y SCL utilizando
  * GPIO y ALTFN

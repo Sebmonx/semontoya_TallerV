@@ -1,22 +1,12 @@
-/**
- ******************************************************************************
- * @file           : main.c
- * @author         : Sebastian Montoya
- * @brief          : Main program body
- ******************************************************************************
- * @attention
+/*
+ * Main_principal.c
  *
- * Copyright (c) 2023 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
+ *  Created on: May 25, 2023
+ *      Author: Sebastian Montoya
  */
 
 #include <stdint.h>
+#include <string.h>
 #include "BasicTimer.h"
 #include "ExtiDriver.h"
 #include "GPIOxDriver.h"
@@ -27,6 +17,7 @@
 #include "USARTxDriver.h"
 
 #define TIMER_80Mhz_100us 8100
+#define TIMER_16Mhz_100us 1600
 
 /* Handlers */
 // PWM
@@ -69,45 +60,33 @@ void inicializacion_Led_Estado(void);
 
 /* ######################## */
 
-
 /* Otras funciones */
 /* ############### */
 
+int main(void){
 
-
-
-int main(void)
-{
-	/* Activador coprocesador matemático - FPU */
-	//SCB->CPACR |= (0xF << 20);
-	//systemClock_80MHz(&config_PLL);
-
-	char dataToSend = 'd';
-	char mensaje[64] = "Prueba";
-
-	//inicializacion_Led_Estado_80Mhz();
-	inicializacion_Led_Estado();
-	inicializacion_pines_USART();
-
-
-    /* Loop forever */
 	while(1){
-		if(timer > 4){
-
-			interruptWriteChar(&USART2_handler,dataToSend);
-			interruptWriteChar(&USART2_handler, data_recibida_USART2);
-			interruptWriteMsg(&USART2_handler, mensaje);
-//			writeChar(&USART2_handler, dataToSend);
-//			writeChar(&USART2_handler,data_recibida_USART2);
-			//writeWord(&USART2_handler, mensaje);
-			data_recibida_USART2 = '\0';
-			timer = 0;
-		}
 
 	}
-
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Pin A5 y TIM2 */
 void inicializacion_Led_Estado_80Mhz(void){
@@ -150,7 +129,7 @@ void inicializacion_Led_Estado(void){
 }
 
 /* Pines A2 y A3 */
-void inicializacion_pines_USART(void){
+void inicializacion_pines_USART2(void){
 
 	// Para realizar transmisión por USB se utilizan los pines PA2 (TX) y PA3 (RX)
 	// Inicializacion de PIN A2 con funcion alternativa de USART2
@@ -176,11 +155,10 @@ void inicializacion_pines_USART(void){
 	USART2_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
 	USART2_handler.USART_Config.USART_enableIntRX = USART_INTERRUPT_RX_ENABLE;
 	USART2_handler.USART_Config.USART_enableIntTX = USART_INTERRUPT_TX_ENABLE;
-	USART2_handler.USART_Config.MCU_frequency = 16;
+	USART2_handler.USART_Config.MCU_frequency = config_PLL.final_Frequency;
 	USART_Config(&USART2_handler);
 }
 
-/* Temporalmente PIN B5 y TIM3 CH2 */
 void inicializacion_PWM(void){
 	pinPWM_handler.pGPIOx = GPIOB;
 	pinPWM_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
@@ -194,11 +172,13 @@ void inicializacion_PWM(void){
 	PWM_handler.ptrTIMx = TIM3;
 	PWM_handler.config.channel = PWM_CHANNEL_2;
 	PWM_handler.config.periodo = 20000;
-	PWM_handler.config.prescaler = 16; /* Incremento cada microsegundo */
+	PWM_handler.config.prescaler = config_PLL.final_Frequency; /* Incremento cada microsegundo */
 	PWM_handler.config.duttyCicle = 0;
 	pwm_Config(&PWM_handler);
 
 }
+
+
 
 /* Centelleo led de estado */
 void BasicTimer2_Callback(void){
@@ -211,7 +191,30 @@ void callback_USART2_RX(void){
 	data_recibida_USART2 = get_data_RX();
 }
 
-/* Interrupción por transmisión USART */
-void callback_USART2_TX(void){
 
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

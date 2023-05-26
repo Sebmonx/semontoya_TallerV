@@ -18,6 +18,7 @@ uint8_t auxiliar_data_TX = 0;
 uint8_t usart_num = 0;
 
 uint8_t dataType = 0;
+uint8_t contador = 0;
 char dataToSend = 0;
 char mensaje[64];
 /**
@@ -167,20 +168,20 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 			// Frec = 80MHz, overr = 0;
 			if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_9600){
 				// El valor a cargar es 520,833
-				// Mantiza = 520 = 0x208, fraction = 16 * 0.8333 = 13 = 0xD
-				// Valor a cargar 0x208D
+				// Mantiza = 527 = 0x20F, fraction = 16 * 0,34375 = 6 = 0x6
+				// Valor 80 entero 0x208D
 				ptrUsartHandler->ptrUSARTx->BRR = 0x208D;
 			}
 			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_19200){
 				// El valor a cargar es 260,41666
-				// Mantiza = 260 = 0x104, fraction = 16 * 0,41666 = 7 = 0x7
-				// Valor a cargar 0x1047
+				// Mantiza = 263 = 0x107, fraction = 16 * 0,67187 = 11 = 0xB
+				// Valor 80 entero 0x1047
 				ptrUsartHandler->ptrUSARTx->BRR = 0x1047;
 			}
 			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_115200){
 				// El valor a cargar es 43,40277
-				// Mantiza = 43 = 0x2B, fraction = 16 * 0,40277 = 7 = 0x7
-				// Valor a cargar 0x02B7
+				// Mantiza = 43 = 0x2B, fraction = 16 * 0,93453 = 15 = 0xF
+				// Valor 80 entero 0x2B7
 				ptrUsartHandler->ptrUSARTx->BRR = 0x02B7;
 			}
 			break;
@@ -266,29 +267,22 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 	__disable_irq();
 
 	// Chequeo de activación de interrupción en recepción
-	if(ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_RX_ENABLE){
+	if(ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_TX_ENABLE){
 
 		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
 		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_RXNEIE;
-
-
-
-		/* Se vuelve a encender las interrupciones globales */
-		__enable_irq();
-
 	} else {
 		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
 	}
 
-	// Chequeo activación de interrupción para transmisión
-	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE){
+	if(ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_TX_ENABLE){
 
-		ptrUsartHandler->ptrUSARTx->CR1 &= ~USART_CR1_TXEIE;
+		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_TXEIE;
 		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
-
 	} else {
-		ptrUsartHandler->ptrUSARTx->CR1 &= ~USART_CR1_TXEIE;
+		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_TXEIE;
 	}
+
 
 	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE || ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_RX_ENABLE){
 		// Matriculamos la interrupción en el NVIC
@@ -345,12 +339,15 @@ void USART2_IRQHandler(void){
 			USART2->DR = dataToSend;
 			USART2->CR1 &= ~USART_CR1_TXEIE;
 		} else {
-			uint8_t i = 0;
-			while(mensaje[i]){
-				USART2->DR = mensaje[i];
-				i++;
+			if(mensaje[contador]!=0){
+				dataToSend = mensaje[contador];
+				USART2->DR = dataToSend;
+				contador++;
+			} else {
+				USART2->CR1 &= ~USART_CR1_TXEIE;
+				contador = 0;
 			}
-			USART2->CR1 &= ~USART_CR1_TXEIE;
+
 		}
 	}
 }
@@ -412,6 +409,7 @@ void interruptWriteChar(USART_Handler_t *ptrUsartHandler, char caracter){
 }
 
 void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word){
+
 	dataType = WORD;
 	strcpy(mensaje, word);
 	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE){

@@ -30,6 +30,7 @@
 
 typedef struct
 {
+	uint8_t			MCU_frequency;
 	I2C_TypeDef		*ptrI2Cx;
 	uint8_t			slaveAddress;
 	uint8_t			modeI2C;
