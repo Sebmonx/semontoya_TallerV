@@ -10,9 +10,12 @@
 #ifndef USARTXDRIVER_H_
 #define USARTXDRIVER_H_
 
-#define USART_1		1
-#define USART_2		2
-#define USART_6		6
+#define CHAR 0
+#define WORD 1
+
+#define USART_NUM1 0
+#define USART_NUM2 1
+#define USART_NUM6 2
 
 #define USART_MODE_TX		0
 #define USART_MODE_RX		1
@@ -97,7 +100,7 @@ uint8_t get_data_RX (void);
 void USART_Config(USART_Handler_t *ptrUsartHandler);
 int writeChar(USART_Handler_t *ptrUsartHandler, int dataToSend );
 void writeMsg(USART_Handler_t *ptrUsartHandler, char *word);
-
+void writeUSART(void);
 void interruptWriteChar(USART_Handler_t *ptrUsartHandler, char caracter);
 void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word);
 

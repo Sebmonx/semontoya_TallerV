@@ -210,8 +210,3 @@ void BasicTimer2_Callback(void){
 void callback_USART2_RX(void){
 	data_recibida_USART2 = get_data_RX();
 }
-
-/* Interrupción por transmisión USART */
-void callback_USART2_TX(void){
-
-}

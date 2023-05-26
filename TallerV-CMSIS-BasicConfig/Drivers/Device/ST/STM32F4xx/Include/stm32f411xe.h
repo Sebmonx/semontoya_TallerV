@@ -764,7 +764,7 @@ typedef struct
 #define I2C3                ((I2C_TypeDef *) I2C3_BASE)
 #define PWR                 ((PWR_TypeDef *) PWR_BASE)
 #define TIM1                ((TIM_TypeDef *) TIM1_BASE)
-#define USART1              ((USART_TypeDef *) USART1_BASE)
+#define USART_1              ((USART_TypeDef *) USART1_BASE)
 #define USART6              ((USART_TypeDef *) USART6_BASE)
 #define ADC1                ((ADC_TypeDef *) ADC1_BASE)
 #define ADC1_COMMON         ((ADC_Common_TypeDef *) ADC1_COMMON_BASE)
@@ -8582,12 +8582,12 @@ typedef struct
 #define IS_TIM_BREAK_INSTANCE(INSTANCE)  (((INSTANCE) == TIM1))
 
 /******************** USART Instances : Synchronous mode **********************/
-#define IS_USART_INSTANCE(INSTANCE) (((INSTANCE) == USART1) || \
+#define IS_USART_INSTANCE(INSTANCE) (((INSTANCE) == USART_1) || \
                                      ((INSTANCE) == USART2) || \
                                      ((INSTANCE) == USART6))
 
 /******************** UART Instances : Half-Duplex mode **********************/
-#define IS_UART_HALFDUPLEX_INSTANCE(INSTANCE) (((INSTANCE) == USART1) || \
+#define IS_UART_HALFDUPLEX_INSTANCE(INSTANCE) (((INSTANCE) == USART_1) || \
                                                ((INSTANCE) == USART2) || \
                                                ((INSTANCE) == USART6))
 
@@ -8595,19 +8595,19 @@ typedef struct
 #define IS_UART_INSTANCE          IS_UART_HALFDUPLEX_INSTANCE
 
 /****************** UART Instances : Hardware Flow control ********************/
-#define IS_UART_HWFLOW_INSTANCE(INSTANCE) (((INSTANCE) == USART1) || \
+#define IS_UART_HWFLOW_INSTANCE(INSTANCE) (((INSTANCE) == USART_1) || \
                                            ((INSTANCE) == USART2) || \
                                            ((INSTANCE) == USART6))
 /******************** UART Instances : LIN mode **********************/
 #define IS_UART_LIN_INSTANCE          IS_UART_HALFDUPLEX_INSTANCE
 
 /********************* UART Instances : Smart card mode ***********************/
-#define IS_SMARTCARD_INSTANCE(INSTANCE) (((INSTANCE) == USART1) || \
+#define IS_SMARTCARD_INSTANCE(INSTANCE) (((INSTANCE) == USART_1) || \
                                          ((INSTANCE) == USART2) || \
                                          ((INSTANCE) == USART6))
 
 /*********************** UART Instances : IRDA mode ***************************/
-#define IS_IRDA_INSTANCE(INSTANCE) (((INSTANCE) == USART1) || \
+#define IS_IRDA_INSTANCE(INSTANCE) (((INSTANCE) == USART_1) || \
                                     ((INSTANCE) == USART2) || \
                                     ((INSTANCE) == USART6))     
 

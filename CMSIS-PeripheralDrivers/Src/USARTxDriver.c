@@ -10,12 +10,10 @@
 #include "USARTxDriver.h"
 #include "PLLDriver.h"
 
-#define CHAR 0
-#define WORD 1
 
 uint8_t auxiliar_data_RX = 0;
 uint8_t auxiliar_data_TX = 0;
-uint8_t usart_num = 0;
+uint8_t used_USART = 0;
 
 uint8_t dataType = 0;
 uint8_t contador = 0;
@@ -314,20 +312,12 @@ void USART1_IRQHandler(void){
 		// Llamar al callback
 		callback_USART1_RX();
 	}
-	else if(USART2->SR & USART_SR_TXE){
-		if(dataType == CHAR){
-			USART1->DR = dataToSend;
-			USART1->CR1 &= ~USART_CR1_TXEIE;
-		} else {
-			uint8_t i = 0;
-			while(mensaje[i]){
-				USART1->DR = mensaje[i];
-				i++;
-			}
-			USART1->CR1 &= ~USART_CR1_TXEIE;
+	else if(USART1->SR & USART_SR_TXE){
+		used_USART = USART_NUM1;
+		writeUSART();
 		}
-	}
 }
+
 
 void USART2_IRQHandler(void){
 	if(USART2->SR & USART_SR_RXNE){
@@ -335,20 +325,8 @@ void USART2_IRQHandler(void){
 		callback_USART2_RX();
 	}
 	else if(USART2->SR & USART_SR_TXE){
-		if(dataType == CHAR){
-			USART2->DR = dataToSend;
-			USART2->CR1 &= ~USART_CR1_TXEIE;
-		} else {
-			if(mensaje[contador]!=0){
-				dataToSend = mensaje[contador];
-				USART2->DR = dataToSend;
-				contador++;
-			} else {
-				USART2->CR1 &= ~USART_CR1_TXEIE;
-				contador = 0;
-			}
-
-		}
+		used_USART = USART_NUM2;
+		writeUSART();
 	}
 }
 
@@ -357,16 +335,67 @@ void USART6_IRQHandler(void){
 		auxiliar_data_RX = (uint8_t) USART6->DR;
 		callback_USART6_RX();
 	}
-	if(dataType == CHAR){
-		USART6->DR = dataToSend;
-		USART6->CR1 &= ~USART_CR1_TXEIE;
-	} else {
-		uint8_t i = 0;
-		while(mensaje[i]){
-			USART6->DR = mensaje[i];
-			i++;
+	else if(USART6->SR & USART_SR_TXE){
+		used_USART = USART_NUM6;
+		writeUSART();
+	}
+}
+
+/* Función para enviar dato o string*/
+void writeUSART(void){
+
+	switch(used_USART){
+		case(USART_NUM1):{
+			if(dataType == CHAR){
+				USART1->DR = dataToSend;
+				USART1->CR1 &= ~USART_CR1_TXEIE;
+			}
+			else {
+				if(mensaje[contador]!=0){
+					dataToSend = mensaje[contador];
+					USART1->DR = dataToSend;
+					contador++;
+				} else {
+					USART1->CR1 &= ~USART_CR1_TXEIE;
+					contador = 0;
+				}
+			}
+			break;
 		}
-		USART6->CR1 &= ~USART_CR1_TXEIE;
+		case(USART_NUM2):{
+			if(dataType == CHAR){
+				USART2->DR = dataToSend;
+				USART2->CR1 &= ~USART_CR1_TXEIE;
+			}
+			else {
+				if(mensaje[contador]!=0){
+					dataToSend = mensaje[contador];
+					USART2->DR = dataToSend;
+					contador++;
+				} else {
+					USART2->CR1 &= ~USART_CR1_TXEIE;
+					contador = 0;
+				}
+			}
+			break;
+		}
+		case(USART_NUM6):{
+			if(dataType == CHAR){
+				USART6->DR = dataToSend;
+				USART6->CR1 &= ~USART_CR1_TXEIE;
+			}
+			else {
+				if(mensaje[contador]!=0){
+					dataToSend = mensaje[contador];
+					USART6->DR = dataToSend;
+					contador++;
+				} else {
+					USART6->CR1 &= ~USART_CR1_TXEIE;
+					contador = 0;
+				}
+			}
+			break;
+		}
 	}
 }
 
@@ -409,7 +438,6 @@ void interruptWriteChar(USART_Handler_t *ptrUsartHandler, char caracter){
 }
 
 void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word){
-
 	dataType = WORD;
 	strcpy(mensaje, word);
 	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE){

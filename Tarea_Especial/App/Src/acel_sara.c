@@ -74,7 +74,7 @@ int main (void)
 			if(rxData == 'w'){
 				sprintf(bufferData, "WHO_AM_I? (r)\n");
 				//writeMsg(&CommTerminal, bufferData);
-				interruptWriteChar(&CommTerminal, bufferData);
+				interruptWriteChar(&CommTerminal, &bufferData);
 				i2cBuffer = i2c_readSingleRegister(&Accelerometer, WHO_AM_I);
 				sprintf(bufferData, "dataRead = 0x%x \n", (unsigned int) i2cBuffer);
 				writeMsg(&CommTerminal, bufferData);
