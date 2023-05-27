@@ -18,7 +18,7 @@ uint8_t used_USART = 0;
 uint8_t dataType = 0;
 uint8_t contador = 0;
 char dataToSend = 0;
-char mensaje[64];
+char mensaje[128];
 /**
  * Configurando el puerto Serial...
  * Recordar que siempre se debe comenzar con activar la señal de reloj
@@ -313,9 +313,21 @@ void USART1_IRQHandler(void){
 		callback_USART1_RX();
 	}
 	else if(USART1->SR & USART_SR_TXE){
-		used_USART = USART_NUM1;
-		writeUSART();
+		if(dataType == CHAR){
+			USART1->DR = dataToSend;
+			USART1->CR1 &= ~USART_CR1_TXEIE;
 		}
+		else {
+			if(mensaje[contador]!=0){
+				dataToSend = mensaje[contador];
+				USART1->DR = dataToSend;
+				contador++;
+			} else {
+				USART1->CR1 &= ~USART_CR1_TXEIE;
+				contador = 0;
+			}
+		}
+	}
 }
 
 
@@ -325,8 +337,20 @@ void USART2_IRQHandler(void){
 		callback_USART2_RX();
 	}
 	else if(USART2->SR & USART_SR_TXE){
-		used_USART = USART_NUM2;
-		writeUSART();
+		if(dataType == CHAR){
+			USART2->DR = dataToSend;
+			USART2->CR1 &= ~USART_CR1_TXEIE;
+		}
+		else {
+			if(mensaje[contador]){
+				dataToSend = mensaje[contador];
+				USART2->DR = dataToSend;
+				contador++;
+			} else if (!mensaje[contador]){
+				USART2->CR1 &= ~USART_CR1_TXEIE;
+				contador = 0;
+			}
+		}
 	}
 }
 
@@ -336,68 +360,23 @@ void USART6_IRQHandler(void){
 		callback_USART6_RX();
 	}
 	else if(USART6->SR & USART_SR_TXE){
-		used_USART = USART_NUM6;
-		writeUSART();
-	}
-}
-
-/* Función para enviar dato o string*/
-void writeUSART(void){
-
-	switch(used_USART){
-		case(USART_NUM1):{
-			if(dataType == CHAR){
-				USART1->DR = dataToSend;
-				USART1->CR1 &= ~USART_CR1_TXEIE;
-			}
-			else {
-				if(mensaje[contador]!=0){
-					dataToSend = mensaje[contador];
-					USART1->DR = dataToSend;
-					contador++;
-				} else {
-					USART1->CR1 &= ~USART_CR1_TXEIE;
-					contador = 0;
-				}
-			}
-			break;
+		if(dataType == CHAR){
+			USART6->DR = dataToSend;
+			USART6->CR1 &= ~USART_CR1_TXEIE;
 		}
-		case(USART_NUM2):{
-			if(dataType == CHAR){
-				USART2->DR = dataToSend;
-				USART2->CR1 &= ~USART_CR1_TXEIE;
-			}
-			else {
-				if(mensaje[contador]!=0){
-					dataToSend = mensaje[contador];
-					USART2->DR = dataToSend;
-					contador++;
-				} else {
-					USART2->CR1 &= ~USART_CR1_TXEIE;
-					contador = 0;
-				}
-			}
-			break;
-		}
-		case(USART_NUM6):{
-			if(dataType == CHAR){
+		else {
+			if(mensaje[contador]!=0){
+				dataToSend = mensaje[contador];
 				USART6->DR = dataToSend;
+				contador++;
+			} else {
 				USART6->CR1 &= ~USART_CR1_TXEIE;
+				contador = 0;
 			}
-			else {
-				if(mensaje[contador]!=0){
-					dataToSend = mensaje[contador];
-					USART6->DR = dataToSend;
-					contador++;
-				} else {
-					USART6->CR1 &= ~USART_CR1_TXEIE;
-					contador = 0;
-				}
-			}
-			break;
 		}
 	}
 }
+
 
 uint8_t get_data_RX (void){
 	return auxiliar_data_RX;
@@ -432,17 +411,14 @@ void writeMsg(USART_Handler_t *ptrUsartHandler, char *word){
 void interruptWriteChar(USART_Handler_t *ptrUsartHandler, char caracter){
 	dataType = CHAR;
 	dataToSend = caracter;
-	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE){
-		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
-	}
+	ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
 }
 
 void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word){
 	dataType = WORD;
 	strcpy(mensaje, word);
-	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE){
-		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
-	}
+	contador = 0;
+	ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
 }
 
 __attribute__ ((weak)) void callback_USART1_RX(void){

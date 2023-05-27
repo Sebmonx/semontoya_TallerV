@@ -12,35 +12,37 @@
 #include "USARTxDriver.h"
 #include "I2CDriver.h"
 #include "BasicTimer.h"
-
+#include "GPIOxDriver.h"
 
 #define AXL345_ADDRESS	0x1D //Acelerometro AXL345
-#define ACCEL_XOUT_L	50
-#define ACCEL_XOUT_H	51
-#define ACCEL_YOUT_L 	52
-#define ACCEL_YOUT_H 	53
-#define ACCEL_ZOUT_L 	54
-#define ACCEL_ZOUT_H 	55
+#define ACCEL_XOUT_L	0x32
+#define ACCEL_XOUT_H	0x33
+#define ACCEL_YOUT_L 	0x34
+#define ACCEL_YOUT_H 	0x35
+#define ACCEL_ZOUT_L 	0x36
+#define ACCEL_ZOUT_H 	0x37
 
 #define POWER_CTL 		45
 #define MEASURE_MODE	0x2D
 #define ACCEL_ID  		0
 
 #define DATA_BUFFER		64
-#define BIGDATA_BUFFER	6500
+#define BIGDATA_BUFFER	2000
 
 #define STANDARD_DATA		0
 #define XYZ_CONSTANT_DATA 	1
+#define XYZ_2SEC_DATA		2
 
 typedef struct{
-	float independent_X_Data[BIGDATA_BUFFER];
-	float independent_Y_Data[BIGDATA_BUFFER];
-	float independent_Z_Data[BIGDATA_BUFFER];
+	float X_Data[BIGDATA_BUFFER];
+	float Y_Data[BIGDATA_BUFFER];
+	float Z_Data[BIGDATA_BUFFER];
 }axis_Data_t;
 
 
 
-void inicializacion_AXL345(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler);
+void inicializacion_AXL345(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
+							BasicTimer_Handler_t *timer100Khz_handler,GPIO_Handler_t *pinTimer100khz);
 void single_data_X(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
 					axis_Data_t *single_Data_archive, uint8_t x_count);
 void single_data_Y(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
@@ -51,5 +53,10 @@ void single_data_Z(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
 void device_ID(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler);
 void read_PowerMode(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler);
 void measure_Mode_config(I2C_Handler_t *accel_handler);
+void constant_100Khz_measuring(I2C_Handler_t *accel_handler, BasicTimer_Handler_t *timer100Khz_handler,
+								GPIO_Handler_t *pinTimer100khz);
+void XYZ_dataset(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
+					axis_Data_t *xyz_Data_archive, uint8_t set_position);
+void print_All_Data(USART_Handler_t *Usart_handler, axis_Data_t *xyz_Data_Archive, uint8_t print_position);
 
 #endif /* ACELEROMETRODRIVER_H_ */

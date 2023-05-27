@@ -100,7 +100,6 @@ uint8_t get_data_RX (void);
 void USART_Config(USART_Handler_t *ptrUsartHandler);
 int writeChar(USART_Handler_t *ptrUsartHandler, int dataToSend );
 void writeMsg(USART_Handler_t *ptrUsartHandler, char *word);
-void writeUSART(void);
 void interruptWriteChar(USART_Handler_t *ptrUsartHandler, char caracter);
 void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word);
 

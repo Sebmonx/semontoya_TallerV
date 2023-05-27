@@ -190,8 +190,8 @@ void inicializacion_Led_Estado(void){
 	// Timer para LED de estado usando el LED2
 	timerLed.ptrTIMx = TIM2;
 	timerLed.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
-	timerLed.TIMx_Config.TIMx_speed = BITMER_SPEED_16Mhz_1ms;
-	timerLed.TIMx_Config.TIMx_period = 250; // 250 ms
+	timerLed.TIMx_Config.TIMx_speed = TIMER_80Mhz_100us;
+	timerLed.TIMx_Config.TIMx_period = 2500; // 250 ms
 	timerLed.TIMx_Config.TIMx_interruptEnable = BTIMER_INTERRUPT_ENABLE; // Activar interrupción
 	BasicTimer_Config(&timerLed);
 
@@ -232,7 +232,7 @@ void inicializacion_pines_USART2(void){
 	USART2_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
 	USART2_handler.USART_Config.USART_enableIntRX = USART_INTERRUPT_RX_ENABLE;
 	USART2_handler.USART_Config.USART_enableIntTX = USART_INTERRUPT_TX_ENABLE;
-	USART2_handler.USART_Config.MCU_frequency = 16; // 16Mhz
+	USART2_handler.USART_Config.MCU_frequency = config_PLL.final_Frequency; // 16Mhz
 	USART_Config(&USART2_handler);
 }
 
@@ -277,9 +277,10 @@ void inicializacion_pines_I2C(void){
 	pinSDA_AXL345.GPIO_PinConfig.GPIO_PinAltFunMode         = AF4;
 	GPIO_Config(&pinSDA_AXL345);
 
-	AXL345.ptrI2Cx                            = I2C1;
-	AXL345.modeI2C                            = I2C_MODE_FM;
-	AXL345.slaveAddress                       = AXL345_ADDRESS;
+	AXL345.ptrI2Cx              = I2C1;
+	AXL345.modeI2C              = I2C_MODE_FM;
+	AXL345.slaveAddress			= AXL345_ADDRESS;
+	AXL345.MCU_frequency		= config_PLL.final_Frequency;
 	i2c_config(&AXL345);
 }
 
