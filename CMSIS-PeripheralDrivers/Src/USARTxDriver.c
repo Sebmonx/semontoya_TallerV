@@ -318,7 +318,7 @@ void USART1_IRQHandler(void){
 			USART1->CR1 &= ~USART_CR1_TXEIE;
 		}
 		else {
-			if(mensaje[contador]!=0){
+			if(mensaje[contador] != '\0'){
 				dataToSend = mensaje[contador];
 				USART1->DR = dataToSend;
 				contador++;
@@ -342,11 +342,11 @@ void USART2_IRQHandler(void){
 			USART2->CR1 &= ~USART_CR1_TXEIE;
 		}
 		else {
-			if(mensaje[contador]){
+			if(mensaje[contador] != '\0'){
 				dataToSend = mensaje[contador];
 				USART2->DR = dataToSend;
 				contador++;
-			} else if (!mensaje[contador]){
+			} else {
 				USART2->CR1 &= ~USART_CR1_TXEIE;
 				contador = 0;
 			}
@@ -365,7 +365,7 @@ void USART6_IRQHandler(void){
 			USART6->CR1 &= ~USART_CR1_TXEIE;
 		}
 		else {
-			if(mensaje[contador]!=0){
+			if(mensaje[contador] != '\0'){
 				dataToSend = mensaje[contador];
 				USART6->DR = dataToSend;
 				contador++;
@@ -411,14 +411,19 @@ void writeMsg(USART_Handler_t *ptrUsartHandler, char *word){
 void interruptWriteChar(USART_Handler_t *ptrUsartHandler, char caracter){
 	dataType = CHAR;
 	dataToSend = caracter;
-	ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
+	if(ptrUsartHandler->USART_Config.USART_enableIntTX == 1){
+		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
+	}
 }
 
 void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word){
 	dataType = WORD;
-	strcpy(mensaje, word);
+	sprintf(mensaje, word);
 	contador = 0;
-	ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
+	if(ptrUsartHandler->USART_Config.USART_enableIntTX == 1){
+		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
+	}
+
 }
 
 __attribute__ ((weak)) void callback_USART1_RX(void){

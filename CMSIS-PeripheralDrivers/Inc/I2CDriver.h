@@ -21,11 +21,15 @@
 #define I2C_MODE_SM		0
 #define I2C_MODE_FM		1
 
-#define I2C_MODE_SM_SPEED_100KHz	80
-#define I2C_MODE_FM_SPEED_400KHz	14
+#define I2C_16Mhz_SM_SPEED		80
+#define I2C_16Mhz_FM_SPEED		14
+#define I2C_40Mhz_SM_SPEED		200
+#define I2C_40Mhz_FM_SPEED		33
 
-#define I2C_MAX_RISE_TIME_SM	17
-#define I2C_MAX_RISE_TIME_FM	5
+#define I2C_MAX_RISE_TIME_16Mhz_SM	17
+#define I2C_MAX_RISE_TIME_16Mhz_FM	5
+#define I2C_MAX_RISE_TIME_40Mhz_SM	41
+#define I2C_MAX_RISE_TIME_40Mhz_FM	13
 
 
 typedef struct

@@ -6,6 +6,7 @@
  */
 
 #include <stdint.h>
+#include <math.h>
 #include "I2CDriver.h"
 #include "PLLDriver.h"
 
@@ -34,13 +35,15 @@ void i2c_config(I2C_Handler_t *ptrHandlerI2C){
 
 	/* Indicar la velocidad del reloj principal, señal usada por el periférico
 	 * para el reloj del bus I2C */
+	uint8_t clock_speed = ptrHandlerI2C->MCU_frequency;
 	ptrHandlerI2C->ptrI2Cx->CR2 &= ~(0b111111 << I2C_CR2_FREQ_Pos);
-	if(ptrHandlerI2C->MCU_frequency < 50){
-		ptrHandlerI2C->ptrI2Cx->CR2 |= (ptrHandlerI2C->MCU_frequency << I2C_CR2_FREQ_Pos);
-	} else {
-		ptrHandlerI2C->ptrI2Cx->CR2 |= (((ptrHandlerI2C->MCU_frequency)/2) << I2C_CR2_FREQ_Pos);
-	}
 
+	if(clock_speed <= 50){
+		ptrHandlerI2C->ptrI2Cx->CR2 |= (clock_speed << I2C_CR2_FREQ_Pos);
+	} else {
+		clock_speed = clock_speed/2;
+		ptrHandlerI2C->ptrI2Cx->CR2 |= (clock_speed << I2C_CR2_FREQ_Pos);
+	}
 
 	/* Configuración de modo I2C en el que el sistema funciona
 	 * Incluye velocidad de reloj y tiempo máximo para cambio de señal
@@ -48,25 +51,47 @@ void i2c_config(I2C_Handler_t *ptrHandlerI2C){
 	ptrHandlerI2C->ptrI2Cx->CCR = 0;
 	ptrHandlerI2C->ptrI2Cx->TRISE = 0;
 
+	uint8_t CCR_value = 0;
+	uint8_t T_rise = 0;
+
+
 	if(ptrHandlerI2C->modeI2C == I2C_MODE_SM){
 		/* Modo estándar SM */
 		ptrHandlerI2C->ptrI2Cx->CCR &= ~I2C_CCR_FS;
 
+		if(clock_speed == 16){
+			CCR_value = I2C_16Mhz_SM_SPEED;
+			T_rise = I2C_MAX_RISE_TIME_16Mhz_SM;
+		}
+		else if(clock_speed == 40){
+			CCR_value = I2C_40Mhz_SM_SPEED;
+			T_rise = I2C_MAX_RISE_TIME_40Mhz_SM;
+		}
+
 		/* Registro para generar señal de reloj */
-		ptrHandlerI2C->ptrI2Cx->CCR |= (I2C_MODE_SM_SPEED_100KHz << I2C_CCR_CCR_Pos);
+		ptrHandlerI2C->ptrI2Cx->CCR |= (CCR_value << I2C_CCR_CCR_Pos);
 
 		/* Registro que controla TRISE máximo */
-		ptrHandlerI2C->ptrI2Cx->TRISE |= I2C_MAX_RISE_TIME_SM;
+		ptrHandlerI2C->ptrI2Cx->TRISE |= T_rise;
 	}
 	else {
 		/* Modo rápido FM */
 		ptrHandlerI2C->ptrI2Cx->CCR |= I2C_CCR_FS;
 
+		if(clock_speed == 16){
+			CCR_value = I2C_16Mhz_FM_SPEED;
+			T_rise = I2C_MAX_RISE_TIME_16Mhz_FM;
+		}
+		else if(clock_speed == 40){
+			CCR_value = I2C_40Mhz_FM_SPEED;
+			T_rise = I2C_MAX_RISE_TIME_40Mhz_FM;
+		}
+
 		/* Registro para generar señal de reloj */
-		ptrHandlerI2C->ptrI2Cx->CCR |= (I2C_MODE_FM_SPEED_400KHz << I2C_CCR_CCR_Pos);
+		ptrHandlerI2C->ptrI2Cx->CCR |= (CCR_value << I2C_CCR_CCR_Pos);
 
 		/* Registro que controla TRISE máximo */
-		ptrHandlerI2C->ptrI2Cx->TRISE |= I2C_MAX_RISE_TIME_FM;
+		ptrHandlerI2C->ptrI2Cx->TRISE |= T_rise;
 	}
 
 	/* Activar módulo I2C */
