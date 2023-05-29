@@ -25,8 +25,8 @@
 
 
 // Handlers PWM
-GPIO_Handler_t pinPWMX_handler ={0};
-pinPWM1_handler PWM1_handler = {0};
+GPIO_Handler_t pinPWM_handler ={0};
+PWM_Handler_t PWM_handler = {0};
 
 // Handlers transmisión USART
 GPIO_Handler_t PinTX_handler = {0};
@@ -53,7 +53,7 @@ int main(void)
 	inicializacion_Led_Estado();
 	inicializacion_PWM();
 	inicializacion_pines_USART();
-	startPwmSignal(&PWM1_handler);
+	startPwmSignal(&PWM_handler);
 
     /* Loop forever */
 	while(1){
@@ -61,11 +61,11 @@ int main(void)
 
 			if(data_recibida_USART2 == 'D'){
 				valor_Dutty -= 10;
-				updateDuttyCycle(&PWM1_handler, valor_Dutty);
+				updateDuttyCycle(&PWM_handler, valor_Dutty);
 			}
 			if(data_recibida_USART2 == 'E'){
 				valor_Dutty += 10;
-				updateDuttyCycle(&PWM1_handler, valor_Dutty);
+				updateDuttyCycle(&PWM_handler, valor_Dutty);
 			}
 
 			/* Imprimir mensaje */
@@ -83,21 +83,21 @@ int main(void)
 }
 
 void inicializacion_PWM(void){
-	pinPWMX_handler.pGPIOx = GPIOB;
-	pinPWMX_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
-	pinPWMX_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
-	pinPWMX_handler.GPIO_PinConfig.GPIO_PinOType = GPIO_OTYPE_PUSHPULL;
-	pinPWMX_handler.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
-	pinPWMX_handler.GPIO_PinConfig.GPIO_PinSpeed = GPIO_OSPEED_FAST;
-	pinPWMX_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF2;
-	GPIO_Config(&pinPWMX_handler);
+	pinPWM_handler.pGPIOx = GPIOB;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinOType = GPIO_OTYPE_PUSHPULL;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinSpeed = GPIO_OSPEED_FAST;
+	pinPWM_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF2;
+	GPIO_Config(&pinPWM_handler);
 
-	PWM1_handler.ptrTIMx = TIM3;
-	PWM1_handler.config.channel = PWM_CHANNEL_2;
-	PWM1_handler.config.periodo = 20000;
-	PWM1_handler.config.prescaler = 16; /* Incremento cada microsegundo */
-	PWM1_handler.config.duttyCicle = valor_Dutty;
-	pwm_Config(&PWM1_handler);
+	PWM_handler.ptrTIMx = TIM3;
+	PWM_handler.config.channel = PWM_CHANNEL_2;
+	PWM_handler.config.periodo = 20000;
+	PWM_handler.config.prescaler = 16; /* Incremento cada microsegundo */
+	PWM_handler.config.duttyCicle = valor_Dutty;
+	pwm_Config(&PWM_handler);
 
 }
 

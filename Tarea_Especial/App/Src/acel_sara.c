@@ -66,8 +66,8 @@ int main (void)
 //	i2c_writeSingleRegister(&Accelerometer, POWER_CTL , 0x2D);
 
 	//Imprimir un mensaje de inicio
-//	writeMsg(&CommTerminal, bufferData);
-	inicializacion_AXL345(&CommTerminal,&Accelerometer);
+	writeMsg(&CommTerminal, bufferData);
+
 
 	while(1){
 
@@ -77,9 +77,10 @@ int main (void)
 
 			if(rxData == 'w'){
 				sprintf(bufferData, "WHO_AM_I? (r)\n");
-				//writeMsg(&CommTerminal, bufferData);
-				interruptWriteChar(&CommTerminal, bufferData);
+				writeMsg(&CommTerminal, bufferData);
+
 				i2cBuffer = i2c_readSingleRegister(&Accelerometer, WHO_AM_I);
+
 				sprintf(bufferData, "dataRead = 0x%x \n", (unsigned int) i2cBuffer);
 				writeMsg(&CommTerminal, bufferData);
 				rxData = '\0';
@@ -102,15 +103,15 @@ int main (void)
 			}
 			else if (rxData == 'x'){
 				single_data_X(&CommTerminal,&Accelerometer,NULL, x_count);
-//				sprintf(bufferData, "Axis X data (r) \n");
-//				writeMsg(&CommTerminal, bufferData);
+				sprintf(bufferData, "Axis X data (r) \n");
+				writeMsg(&CommTerminal, bufferData);
 
-//				uint8_t AccelX_low =  i2c_readSingleRegister(&Accelerometer, ACCEL_XOUT_L);
-//				uint8_t AccelX_high = i2c_readSingleRegister(&Accelerometer, ACCEL_XOUT_H);
-//				int16_t AccelX = AccelX_high << 8 | AccelX_low;
-//				float ValorX = AccelX*(0.0039*9.8);
-//				sprintf(bufferData, "AccelX = %.2f \n", ValorX);
-//				writeMsg(&CommTerminal, bufferData);
+				uint8_t AccelX_low =  i2c_readSingleRegister(&Accelerometer, ACCEL_XOUT_L);
+				uint8_t AccelX_high = i2c_readSingleRegister(&Accelerometer, ACCEL_XOUT_H);
+				int16_t AccelX = AccelX_high << 8 | AccelX_low;
+				float ValorX = AccelX*(0.0039*9.8);
+				sprintf(bufferData, "AccelX = %.2f \n", ValorX);
+				writeMsg(&CommTerminal, bufferData);
 				rxData = '\0';
 			}
 			else if(rxData == 'y'){

@@ -1,22 +1,15 @@
-/**
- ******************************************************************************
- * @file           : main.c
- * @author         : Sebastian Montoya
- * @brief          : Main program body
- ******************************************************************************
- * @attention
+/*
+ * Main.c
  *
- * Copyright (c) 2023 STMicroelectronics.
- * All rights reserved.
+ *  Created on: May 29, 2023
+ *      Author: Sebastian Montoya
  *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
  */
 
+
 #include <stdint.h>
+#include <string.h>
+#include <math.h>
 #include "BasicTimer.h"
 #include "ExtiDriver.h"
 #include "GPIOxDriver.h"
@@ -25,6 +18,7 @@
 #include "PwmDriver.h"
 #include "SysTickDriver.h"
 #include "USARTxDriver.h"
+#include "AcelerometroDriver.h"
 
 #define TIMER_80Mhz_100us 8100
 
@@ -37,6 +31,10 @@ PWM_Handler_t PWM_handler = {0};
 GPIO_Handler_t PinTX_handler = {0};
 GPIO_Handler_t PinRX_handler = {0};
 USART_Handler_t USART2_handler = {0};
+
+GPIO_Handler_t PinTX_U6_handler = {0};
+GPIO_Handler_t PinRX_U6_handler = {0};
+USART_Handler_t USART6_handler = {0};
 
 // LED de estado
 BasicTimer_Handler_t timerLed = {0};
@@ -66,7 +64,7 @@ void inicializacion_Led_Estado_80Mhz(void);
 void inicializacion_pines_USART(void);
 void inicializacion_PWM(void);
 void inicializacion_Led_Estado(void);
-
+void inicializacion_USART6(void);
 /* ######################## */
 
 
@@ -87,16 +85,20 @@ int main(void)
 
 	//inicializacion_Led_Estado_80Mhz();
 	inicializacion_Led_Estado();
-	inicializacion_pines_USART();
-
+	inicializacion_USART6();
+	data_recibida_USART2 = '\0';
 
     /* Loop forever */
 	while(1){
-		if(timer > 4){
+		if(data_recibida_USART2 != '\0'){
+			interruptWriteChar(&USART6_handler,data_recibida_USART2);
+			data_recibida_USART2 = '\0';
+		}
+		else if(timer > 4){
 
-			interruptWriteChar(&USART2_handler,dataToSend);
-			interruptWriteChar(&USART2_handler, data_recibida_USART2);
-			interruptWriteMsg(&USART2_handler, mensaje);
+			interruptWriteChar(&USART6_handler,dataToSend);
+			interruptWriteChar(&USART6_handler, data_recibida_USART2);
+			interruptWriteMsg(&USART6_handler, mensaje);
 //			writeChar(&USART2_handler, dataToSend);
 //			writeChar(&USART2_handler,data_recibida_USART2);
 			//writeWord(&USART2_handler, mensaje);
@@ -180,6 +182,32 @@ void inicializacion_pines_USART(void){
 	USART_Config(&USART2_handler);
 }
 
+
+void inicializacion_USART6(void){
+	PinTX_U6_handler.pGPIOx = GPIOA;
+	PinTX_U6_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_11;
+	PinTX_U6_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
+	PinTX_U6_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF8;
+	GPIO_Config(&PinTX_U6_handler);
+
+	PinRX_U6_handler.pGPIOx = GPIOA;
+	PinRX_U6_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_12;
+	PinRX_U6_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
+	PinRX_U6_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF8;
+	GPIO_Config(&PinRX_U6_handler);
+
+	USART6_handler.ptrUSARTx = USART6;
+	USART6_handler.USART_Config.USART_mode = USART_MODE_RXTX;
+	USART6_handler.USART_Config.USART_baudrate = USART_BAUDRATE_115200;
+	USART6_handler.USART_Config.USART_datasize = USART_DATASIZE_8BIT;
+	USART6_handler.USART_Config.USART_parity = USART_PARITY_NONE;
+	USART6_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
+	USART6_handler.USART_Config.USART_enableIntRX = USART_INTERRUPT_RX_ENABLE;
+	USART6_handler.USART_Config.USART_enableIntTX = USART_INTERRUPT_TX_ENABLE;
+	USART6_handler.USART_Config.MCU_frequency = 16;
+	USART_Config(&USART6_handler);
+}
+
 /* Temporalmente PIN B5 y TIM3 CH2 */
 void inicializacion_PWM(void){
 	pinPWM_handler.pGPIOx = GPIOB;
@@ -207,6 +235,6 @@ void BasicTimer2_Callback(void){
 }
 
 /* Interrupción por recepción USART */
-void callback_USART2_RX(void){
+void callback_USART6_RX(void){
 	data_recibida_USART2 = get_data_RX();
 }

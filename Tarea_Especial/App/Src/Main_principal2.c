@@ -32,9 +32,8 @@ PWM_Handler_t PWMY_handler = {0};
 
 GPIO_Handler_t pinPWMZ_handler ={0};
 PWM_Handler_t PWMZ_handler = {0};
-//////////////
 
-// USART 2 y 6
+// USART6
 GPIO_Handler_t PinTX_U2_handler = {0};
 GPIO_Handler_t PinRX_U2_handler = {0};
 USART_Handler_t USART2_handler = {0};
@@ -42,25 +41,21 @@ USART_Handler_t USART2_handler = {0};
 GPIO_Handler_t PinTX_U6_handler = {0};
 GPIO_Handler_t PinRX_U6_handler = {0};
 USART_Handler_t USART6_handler = {0};
-//////////////
 
 // LED de estado
 BasicTimer_Handler_t timerLed = {0};
 GPIO_Handler_t blinkyLed = {0};
-//////////////
 
 // PLL
 PLL_Config_t config_PLL = {0};
 system_Clock_data data_Reloj = {0};
-//////////////
 
 // I2C
-
+GPIO_Handler_t pin_timer100Khz = {0};
 BasicTimer_Handler_t timer100Khz = {0};
 GPIO_Handler_t pinSCL_AXL345 = {0};
 GPIO_Handler_t pinSDA_AXL345 = {0};
 I2C_Handler_t AXL345 = {0};
-//////////////
 /* ######## */
 
 
@@ -86,6 +81,7 @@ uint16_t posicion_muestreo;
 /* Funciones inicialización */
 void inicializacion_Led_Estado_80Mhz(void);
 void inicializacion_pines_USART2(void);
+void inicializacion_USART6(void);
 void inicializacion_PWM(void);
 void inicializacion_Led_Estado(void);
 void inicializacion_pines_I2C(void);
@@ -96,58 +92,54 @@ void inicializacion_timer_100Khz(void);
 /* Otras funciones */
 void print_Clock_Config(void);
 uint16_t dutty_calculation(PWM_Handler_t *PWM_handler, float data);
-void update_PWM_signals(void);
 /* ############### */
 
 int main(void){
 	/* Activador coprocesador matemático - FPU */
 	SCB->CPACR |= (0xF << 20);
 
-	systemClock_80MHz(&config_PLL);
-	inicializacion_Led_Estado_80Mhz();
-	inicializacion_pines_USART2();
+//	systemClock_80MHz(&config_PLL);
 	inicializacion_pines_I2C();
-	inicializacion_timer_100Khz();
-	inicializacion_PWM();
-	inicializacion_AXL345(&USART2_handler, &AXL345, usart_buffer);
+	inicializacion_pines_USART2();
+//	inicializacion_USART6();
+	inicializacion_AXL345(&USART2_handler, &AXL345);
+	inicializacion_Led_Estado();
+//	inicializacion_timer_100Khz();
+//	inicializacion_PWM();
+
+
+
 
 	while(1){
-
-
-
-
-		if(modo_recepcion_data == XYZ_CONSTANT_DATA){
-			 XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo,posicion_muestreo, usart_buffer);
-			posicion_muestreo++;
-			if(posicion_muestreo == BIGDATA_BUFFER){
-				posicion_muestreo = 0;
-			}
+		 if(modo_recepcion_data == XYZ_CONSTANT_DATA){
+			XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo,posicion_muestreo);
 			modo_recepcion_data = STANDARD_DATA;
 		}
 		else if(modo_recepcion_data == STANDARD_DATA){
 			if(data_recibida_USART != '\0'){
 				if(data_recibida_USART == 'w'){
-					device_ID(&USART2_handler, &AXL345, usart_buffer);
+					device_ID(&USART2_handler, &AXL345);
 					data_recibida_USART = '\0';
 				}
 				else if(data_recibida_USART == 'r'){
-					read_PowerMode(&USART2_handler, &AXL345, usart_buffer);
+					read_PowerMode(&USART2_handler, &AXL345);
 					data_recibida_USART = '\0';
 				}
 				else if(data_recibida_USART == 'x'){
-					single_data_X(&USART2_handler, &AXL345, &datos_individuales, posicion_iX, usart_buffer);
+					single_data_X(&USART2_handler, &AXL345, &datos_individuales, posicion_iX);
 					data_recibida_USART = '\0';
 				}
 				else if(data_recibida_USART == 'y'){
-					single_data_Y(&USART2_handler, &AXL345, &datos_individuales, posicion_iY, usart_buffer);
+					single_data_Y(&USART2_handler, &AXL345, &datos_individuales, posicion_iY);
 					data_recibida_USART = '\0';
 				}
 				else if(data_recibida_USART == 'z'){
-					single_data_Z(&USART2_handler, &AXL345, &datos_individuales, posicion_iZ, usart_buffer);
+					single_data_Z(&USART2_handler, &AXL345, &datos_individuales, posicion_iZ);
 					data_recibida_USART = '\0';
 				}
 				else if(data_recibida_USART == 's'){
-					XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo,posicion_muestreo, usart_buffer);
+					XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo,posicion_muestreo);
+					posicion_muestreo++;
 					data_recibida_USART = '\0';
 				}
 				else if(data_recibida_USART == 'c'){
@@ -162,39 +154,22 @@ int main(void){
 				else if(data_recibida_USART == 'd'){
 					timer_flag = 2;
 					posicion_muestreo = 0;
-				}
-				else if(data_recibida_USART == 'g'){
-					print_Clock_Config();
 					data_recibida_USART = '\0';
 				}
 			}
 
 		}
 		else if (modo_recepcion_data == XYZ_2SEC_DATA){
-			XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo,posicion_muestreo, usart_buffer);
-			posicion_muestreo++;
+			XYZ_dataset(NULL,&AXL345, &datos_muestreo,posicion_muestreo);
 			if(timer == 2000){
 				timer_flag = 0;
 				timer = 0;
-				posicion_muestreo = 0;
-				data_recibida_USART = '\0';
+				print_All_Data(&USART2_handler,&datos_muestreo,posicion_muestreo);
 			}
 			modo_recepcion_data = STANDARD_DATA;
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -268,23 +243,24 @@ void inicializacion_pines_USART2(void){
 	USART2_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
 	USART2_handler.USART_Config.USART_enableIntRX = USART_INTERRUPT_RX_ENABLE;
 	USART2_handler.USART_Config.USART_enableIntTX = USART_INTERRUPT_TX_ENABLE;
-	USART2_handler.USART_Config.MCU_frequency = config_PLL.final_Frequency; // 80Mhz
+	USART2_handler.USART_Config.MCU_frequency = 16;//config_PLL.final_Frequency; // 16Mhz
 	USART_Config(&USART2_handler);
 }
 
+/* Pin B5 y TIM3*/
 void inicializacion_USART6(void){
-	// Inicializacion de PIN A2 con funcion alternativa de USART2
+	// Inicializacion de PIN C6 con funcion alternativa de USART2
 	PinTX_U6_handler.pGPIOx = GPIOC;
 	PinTX_U6_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_6;
 	PinTX_U6_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
-	PinTX_U6_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF7;
+	PinTX_U6_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF8;
 	GPIO_Config(&PinTX_U6_handler);
 
 	// Inicialización de PIN A3 con función alternativa de USART2
 	PinRX_U6_handler.pGPIOx = GPIOC;
 	PinRX_U6_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_7;
 	PinRX_U6_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
-	PinRX_U6_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF7;
+	PinRX_U6_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF8;
 	GPIO_Config(&PinRX_U6_handler);
 
 	// Inicialización de módulo serial USART2 transmisión + recepción e interrupción RX
@@ -296,16 +272,13 @@ void inicializacion_USART6(void){
 	USART6_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
 	USART6_handler.USART_Config.USART_enableIntRX = USART_INTERRUPT_RX_ENABLE;
 	USART6_handler.USART_Config.USART_enableIntTX = USART_INTERRUPT_TX_ENABLE;
-	USART6_handler.USART_Config.MCU_frequency = config_PLL.final_Frequency; // 80Mhz
+	USART6_handler.USART_Config.MCU_frequency = 16;//config_PLL.final_Frequency; // 80Mhz
 	USART_Config(&USART6_handler);
 }
 
 /* Pines B4 B5 B0 y TIM3*/
 void inicializacion_PWM(void){
 
-	/* Timer para control de interrupción */
-
-	/* Señal #1 para eje X */
 	pinPWMX_handler.pGPIOx = GPIOB;
 	pinPWMX_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_4;
 	pinPWMX_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
@@ -316,14 +289,13 @@ void inicializacion_PWM(void){
 	GPIO_Config(&pinPWMX_handler);
 
 	PWMX_handler.ptrTIMx = TIM3;
-	PWMX_handler.config.channel= PWM_CHANNEL_1;
-	PWMX_handler.config.periodo = 200;
-	PWMX_handler.config.prescaler = PWM_PRESCALER_80MHz_10us;
+	PWMX_handler.config.channel = PWM_CHANNEL_1;
+	PWMX_handler.config.prescaler = TIMER_80Mhz_100us;
+	PWMX_handler.config.periodo = 2000;
 	PWMX_handler.config.duttyCicle = 1000;
 	pwm_Config(&PWMX_handler);
 	startPwmSignal(&PWMX_handler);
 
-	/* Señal #2 para eje Y */
 	pinPWMY_handler.pGPIOx = GPIOB;
 	pinPWMY_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
 	pinPWMY_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
@@ -335,13 +307,12 @@ void inicializacion_PWM(void){
 
 	PWMY_handler.ptrTIMx = TIM3;
 	PWMY_handler.config.channel = PWM_CHANNEL_2;
-	PWMY_handler.config.periodo = 200;
-	PWMY_handler.config.prescaler = PWM_PRESCALER_80MHz_10us;
+	PWMY_handler.config.prescaler = TIMER_80Mhz_100us;
+	PWMY_handler.config.periodo = 2000;
 	PWMY_handler.config.duttyCicle = 1000;
 	pwm_Config(&PWMY_handler);
 	startPwmSignal(&PWMY_handler);
 
-	/* Señal #3 para eje Z */
 	pinPWMZ_handler.pGPIOx = GPIOB;
 	pinPWMZ_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_0;
 	pinPWMZ_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
@@ -353,8 +324,8 @@ void inicializacion_PWM(void){
 
 	PWMZ_handler.ptrTIMx = TIM3;
 	PWMZ_handler.config.channel = PWM_CHANNEL_3;
-	PWMZ_handler.config.periodo = 200;
-	PWMZ_handler.config.prescaler = PWM_PRESCALER_80MHz_10us;
+	PWMZ_handler.config.prescaler = TIMER_80Mhz_100us;
+	PWMZ_handler.config.periodo = 2000;
 	PWMZ_handler.config.duttyCicle = 1000;
 	pwm_Config(&PWMZ_handler);
 	startPwmSignal(&PWMZ_handler);
@@ -385,7 +356,7 @@ void inicializacion_pines_I2C(void){
 	AXL345.ptrI2Cx              = I2C1;
 	AXL345.modeI2C              = I2C_MODE_FM;
 	AXL345.slaveAddress			= AXL345_ADDRESS;
-	AXL345.MCU_frequency		= config_PLL.final_Frequency;
+	AXL345.MCU_frequency		= 16;//config_PLL.final_Frequency;
 	i2c_config(&AXL345);
 }
 
@@ -394,10 +365,11 @@ void inicializacion_timer_100Khz(void){
 	timer100Khz.ptrTIMx = TIM5;
 	timer100Khz.TIMx_Config.TIMx_mode = BTIMER_MODE_UP;
 	timer100Khz.TIMx_Config.TIMx_speed = TIMER_80Mhz_100us;
-	timer100Khz.TIMx_Config.TIMx_period = 10; // 1 ms
+	timer100Khz.TIMx_Config.TIMx_period = 100; // 1 ms
 	timer100Khz.TIMx_Config.TIMx_interruptEnable = BTIMER_INTERRUPT_ENABLE;
 	BasicTimer_Config(&timer100Khz);
 }
+
 
 void print_Clock_Config(void){
 	systemClock_GetConfig(&data_Reloj);
@@ -405,7 +377,7 @@ void print_Clock_Config(void){
 	sprintf(usart_buffer, "%s \nClock Speed = %d Mhz \nAHB1 = %d \nAPB1 = %d Mhz \nAPB2 = %d \n",
 			data_Reloj.clock_Source,data_Reloj.clock_Frequency,data_Reloj.AHB_Frequency,
 			data_Reloj.APB1_Frequency, data_Reloj.APB2_Frequency);
-	interruptWriteMsg(&USART2_handler, usart_buffer);
+	interruptWriteMsg(&USART6_handler, usart_buffer);
 }
 
 uint16_t dutty_calculation(PWM_Handler_t *PWM_handler, float data){
@@ -415,10 +387,10 @@ uint16_t dutty_calculation(PWM_Handler_t *PWM_handler, float data){
 		newDutty = (PWM_handler->config.periodo/2);
 	}
 	else if(data < 0){
-		newDutty = (auxData/30) * (PWM_handler->config.periodo);
+		newDutty = (auxData/20) * (PWM_handler->config.periodo);
 	}
 	else if(data > 0){
-		newDutty = (PWM_handler->config.periodo) * (1/2 + (auxData/30));
+		newDutty = (PWM_handler->config.periodo) * (1/2 + (auxData/20));
 	}
 	return newDutty;
 }
@@ -438,37 +410,37 @@ void update_PWM_signals(void){
 }
 
 
+/* Centelleo led de estado */
+void BasicTimer2_Callback(void){
+	GPIOxTooglePin(&blinkyLed);
+	timer2++;
+//	if(timer2 > 4){
+//		update_PWM_signals();
+//		timer2=0;
+//	}
+}
+
 /* Interrupción por recepción USART */
 void callback_USART2_RX(void){
 	data_recibida_USART = get_data_RX();
 }
 
-/* Centelleo led de estado */
-void BasicTimer2_Callback(void){
-	GPIOxTooglePin(&blinkyLed);
-	if(timer2 > 4){
-		update_PWM_signals();
-		timer2 = 0;
-	}
-	timer2++;
-}
-
-/* Interrupción timer para actualización de PWM */
-void BasicTimer3_Callback(void){
-
-}
+///* Interrupción por recepción USART */
+//void callback_USART6_RX(void){
+//	data_recibida_USART = get_data_RX();
+//}
 
 /* Envio de datos a 1Khz */
-void BasicTimer5_Callback(void){
-	if(timer_flag == 1){
-		modo_recepcion_data = XYZ_CONSTANT_DATA;
-	} else if (timer_flag == 2){
-		modo_recepcion_data = XYZ_2SEC_DATA;
-		timer++;
-	} else {
-		__NOP();
-	}
-}
+//void BasicTimer5_Callback(void){
+//	if(timer_flag == 1){
+//		modo_recepcion_data = XYZ_CONSTANT_DATA;
+//	} else if (timer_flag == 2){
+//		modo_recepcion_data = XYZ_2SEC_DATA;
+//		timer++;
+//	} else {
+//		__NOP();
+//	}
+//}
 
 
 

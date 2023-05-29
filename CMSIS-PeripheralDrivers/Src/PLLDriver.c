@@ -233,55 +233,55 @@ void systemClock_Output(GPIO_Handler_t *ptrC9){
 
 void systemClock_GetConfig(system_Clock_data *ptrClockData){
 	/* Fuente de reloj actual */
-	if((RCC->CFGR & RCC_CFGR_SWS_HSI) == 0){
+	if(!(RCC->CFGR & RCC_CFGR_SWS_HSI)){
 		strcpy(ptrClockData->clock_Source, "HSI");
-		ptrClockData->clock_Frequency = 16;
 	}
 	else if(RCC->CFGR & RCC_CFGR_SWS_HSE){
 		strcpy(ptrClockData->clock_Source, "HSE");
 	}
 	else if(RCC->CFGR & RCC_CFGR_SWS_PLL){
 		strcpy(ptrClockData->clock_Source, "PLL");
-
-		/* Frecuencia actual en reloj */
-		uint16_t factor_aux = 0;
-
-		// Definir y dividir Factor M
-		factor_aux = ((RCC->PLLCFGR & RCC_PLLCFGR_PLLM)>> RCC_PLLCFGR_PLLM_Pos); // Definir Factor M
-		ptrClockData->clock_Frequency = 16/factor_aux;
-		factor_aux = 0;
-
-		// Definir y multiplicar Factor N
-		factor_aux = ((RCC->PLLCFGR & RCC_PLLCFGR_PLLN)>> (RCC_PLLCFGR_PLLN_Pos));
-		ptrClockData->clock_Frequency = (ptrClockData->clock_Frequency)*factor_aux;
-		factor_aux = 0;
-
-		// Definir y dividir Factor P
-		factor_aux = ((RCC->PLLCFGR & RCC_PLLCFGR_PLLP) >> RCC_PLLCFGR_PLLP_Pos);
-		switch(factor_aux){
-			case 0:{
-				factor_aux = 2;
-				break;
-			}
-			case 1:{
-				factor_aux = 4;
-				break;
-			}
-			case 2:{
-				factor_aux = 6;
-				break;
-			}
-			case 3:{
-				factor_aux = 8;
-				break;
-			}
-			default:{
-				__NOP();
-				break;
-			}
-		}
-		ptrClockData->clock_Frequency = (ptrClockData->clock_Frequency)/factor_aux;
 	}
+
+	/* Frecuencia actual en reloj */
+	uint8_t factor_aux = 0;
+
+	// Definir y dividir Factor M
+	factor_aux = (RCC->PLLCFGR & RCC_PLLCFGR_PLLM)>> RCC_PLLCFGR_PLLM_Pos; // Definir Factor M
+	ptrClockData->clock_Frequency = 16/factor_aux;
+	factor_aux = 0;
+
+	// Definir y multiplicar Factor N
+	factor_aux = (RCC->PLLCFGR & RCC_PLLCFGR_PLLN)>> RCC_PLLCFGR_PLLN_Pos;
+	ptrClockData->clock_Frequency = (ptrClockData->clock_Frequency)*factor_aux;
+	factor_aux = 0;
+
+	// Definir y dividir Factor P
+	factor_aux = (RCC->PLLCFGR & RCC_PLLCFGR_PLLP)>> RCC_PLLCFGR_PLLP_Pos;
+	switch(factor_aux){
+		case 0:{
+			factor_aux = 2;
+			break;
+		}
+		case 1:{
+			factor_aux = 4;
+			break;
+		}
+		case 2:{
+			factor_aux = 6;
+			break;
+		}
+		case 3:{
+			factor_aux = 8;
+			break;
+		}
+		default:{
+			__NOP();
+			break;
+		}
+	}
+	ptrClockData->clock_Frequency = (ptrClockData->clock_Frequency)/factor_aux;
+
 
 	/* Frecuencia APB1 */
 	switch(RCC->CFGR & RCC_CFGR_PPRE1){

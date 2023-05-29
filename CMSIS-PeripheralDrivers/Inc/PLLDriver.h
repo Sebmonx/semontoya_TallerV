@@ -28,7 +28,7 @@ typedef struct
 typedef struct
 {
 	char		clock_Source[4];
-	uint16_t	clock_Frequency;
+	uint8_t		clock_Frequency;
 	uint8_t		APB1_Frequency;
 	uint8_t		APB2_Frequency;
 	uint8_t		AHB_Frequency;

@@ -143,7 +143,7 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 				// Mantiza = 8 = 0x8, fraccion = 16 * 0.68056 = 11 = 0xB
 				// Valor a cargar 0x08B
 				// Configurando el baudrate generator para una velocidad de 115200bps
-				ptrUsartHandler->ptrUSARTx->BRR = 0x008B;
+				ptrUsartHandler->ptrUSARTx->BRR = 0x8B;
 			}
 			break;
 		}
@@ -256,10 +256,7 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 	}
 	}
 
-	// 2.7 Activamos el modulo serial.
-	if(ptrUsartHandler->USART_Config.USART_mode != USART_MODE_DISABLE){
-		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_UE;
-	}
+
 
 	// Desactivar interrupciones globales
 	__disable_irq();
@@ -281,7 +278,6 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_TXEIE;
 	}
 
-
 	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE || ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_RX_ENABLE){
 		// Matriculamos la interrupción en el NVIC
 		if(ptrUsartHandler->ptrUSARTx == USART1){
@@ -301,6 +297,10 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 	/* Se vuelve a encender las interrupciones globales */
 	__enable_irq();
 
+	// 2.7 Activamos el modulo serial.
+	if(ptrUsartHandler->USART_Config.USART_mode != USART_MODE_DISABLE){
+		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_UE;
+	}
 }
 
 
@@ -318,7 +318,7 @@ void USART1_IRQHandler(void){
 			USART1->CR1 &= ~USART_CR1_TXEIE;
 		}
 		else {
-			if(mensaje[contador] != '\0'){
+			if(mensaje[contador]!='\0'){
 				dataToSend = mensaje[contador];
 				USART1->DR = dataToSend;
 				contador++;
@@ -341,12 +341,12 @@ void USART2_IRQHandler(void){
 			USART2->DR = dataToSend;
 			USART2->CR1 &= ~USART_CR1_TXEIE;
 		}
-		else {
+		else if(dataType == WORD) {
 			if(mensaje[contador] != '\0'){
 				dataToSend = mensaje[contador];
 				USART2->DR = dataToSend;
 				contador++;
-			} else {
+			} else if (mensaje[contador] == '\0'){
 				USART2->CR1 &= ~USART_CR1_TXEIE;
 				contador = 0;
 			}
@@ -365,18 +365,17 @@ void USART6_IRQHandler(void){
 			USART6->CR1 &= ~USART_CR1_TXEIE;
 		}
 		else {
-			if(mensaje[contador] != '\0'){
+			if(mensaje[contador]!='\0'){
 				dataToSend = mensaje[contador];
 				USART6->DR = dataToSend;
 				contador++;
-			} else {
+			} else if (mensaje[contador] == '\0'){
 				USART6->CR1 &= ~USART_CR1_TXEIE;
 				contador = 0;
 			}
 		}
 	}
 }
-
 
 uint8_t get_data_RX (void){
 	return auxiliar_data_RX;
@@ -411,19 +410,14 @@ void writeMsg(USART_Handler_t *ptrUsartHandler, char *word){
 void interruptWriteChar(USART_Handler_t *ptrUsartHandler, char caracter){
 	dataType = CHAR;
 	dataToSend = caracter;
-	if(ptrUsartHandler->USART_Config.USART_enableIntTX == 1){
-		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
-	}
+	ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
 }
 
 void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word){
 	dataType = WORD;
-	sprintf(mensaje, word);
+	strcpy(mensaje, word);
 	contador = 0;
-	if(ptrUsartHandler->USART_Config.USART_enableIntTX == 1){
-		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
-	}
-
+	ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
 }
 
 __attribute__ ((weak)) void callback_USART1_RX(void){

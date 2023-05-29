@@ -17,7 +17,6 @@
  */
 
 #include <stdint.h>
-#include <math.h>
 #include "BasicTimer.h"
 #include "ExtiDriver.h"
 #include "GPIOxDriver.h"
@@ -32,7 +31,6 @@ int main(void)
 {
 	/* Activador coprocesador matemático - FPU */
 	SCB->CPACR |= (0xF << 20);
-
 
     /* Loop forever */
 	while(1){
