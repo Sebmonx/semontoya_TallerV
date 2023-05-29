@@ -18,8 +18,9 @@
 #include "AcelerometroDriver.h"
 
 
-#define TIMER_80Mhz_100us 8100
-#define TIMER_16Mhz_100us 1600
+#define TIMER_80Mhz_100us 	8100
+#define TIMER_80Mhz_10us 	810
+#define TIMER_16Mhz_100us 	1600
 
 /* Handlers */
 // PWM
@@ -62,16 +63,16 @@ char data_recibida_USART = 0;
 uint16_t timer = 0;
 uint16_t timer2 = 0;
 uint8_t timer_flag = 0;
-char usart_buffer[64];
+char usart_buffer[128] = {0};
 uint8_t modo_recepcion_data = STANDARD_DATA;
 
-axis_Data_t datos_individuales;
-uint16_t posicion_iX;
-uint16_t posicion_iY;
-uint16_t posicion_iZ;
+axis_Data_t datos_individuales = {0};
+uint16_t posicion_iX = 0;
+uint16_t posicion_iY = 0;
+uint16_t posicion_iZ= 0;
 
-axis_Data_t datos_muestreo;
-uint16_t posicion_muestreo;
+axis_Data_t datos_muestreo = {0};
+uint16_t posicion_muestreo = 0;
 
 /* ######### */
 
@@ -106,7 +107,9 @@ int main(void){
 
 	while(1){
 		 if(modo_recepcion_data == XYZ_CONSTANT_DATA){
-			XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo,posicion_muestreo);
+			XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo, posicion_muestreo);
+			print_XYZ_Data(&datos_muestreo, &USART2_handler, posicion_muestreo);
+			posicion_muestreo++;
 			modo_recepcion_data = STANDARD_DATA;
 		}
 		else if(modo_recepcion_data == STANDARD_DATA){
@@ -133,6 +136,7 @@ int main(void){
 				}
 				else if(data_recibida_USART == 's'){
 					XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo,posicion_muestreo);
+					print_XYZ_Data(&datos_muestreo, &USART2_handler, posicion_muestreo);
 					data_recibida_USART = '\0';
 				}
 				else if(data_recibida_USART == 'c'){
@@ -147,7 +151,6 @@ int main(void){
 				else if(data_recibida_USART == 'd'){
 					data_recibida_USART = '\0';
 					posicion_muestreo = 0;
-					USART2->CR1 &= ~USART_CR1_RXNEIE;
 					timer_flag = 2;
 				}
 				else if(data_recibida_USART == 'g'){
@@ -163,11 +166,11 @@ int main(void){
 
 		} else if (modo_recepcion_data == XYZ_2SEC_DATA){
 			XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo,posicion_muestreo);
+			timer++;
 			if(timer == 2000){
 				timer_flag = 0;
 				timer = 0;
 				posicion_muestreo = 0;
-				USART2->CR1 |= USART_CR1_RXNEIE;
 			}
 			modo_recepcion_data = STANDARD_DATA;
 		}
@@ -215,6 +218,32 @@ void update_PWM_signals(void){
 	updateDuttyCycle(&PWMX_handler, x_dutty);
 	updateDuttyCycle(&PWMY_handler, y_dutty);
 	updateDuttyCycle(&PWMZ_handler, z_dutty);
+}
+
+/* Centelleo led de estado */
+void BasicTimer2_Callback(void){
+	GPIOxTooglePin(&blinkyLed);
+	timer2++;
+	if(timer2 > 4){
+		update_PWM_signals();
+		timer2=0;
+	}
+}
+
+/* Interrupción por recepción USART */
+void callback_USART2_RX(void){
+	data_recibida_USART = get_data_RX();
+}
+
+/* Envio de datos a 1Khz */
+void BasicTimer5_Callback(void){
+	if(timer_flag == 1){
+		modo_recepcion_data = XYZ_CONSTANT_DATA;
+	} else if (timer_flag == 2){
+		modo_recepcion_data = XYZ_2SEC_DATA;
+	} else {
+		__NOP();
+	}
 }
 
 /* Pin A5 y TIM2 */
@@ -400,38 +429,12 @@ void inicializacion_timer_100Khz(void){
 	/* Configuración TIM4 para ser el control del muestreo a 1Khz*/
 	timer100Khz.ptrTIMx = TIM5;
 	timer100Khz.TIMx_Config.TIMx_mode = BTIMER_MODE_UP;
-	timer100Khz.TIMx_Config.TIMx_speed = TIMER_80Mhz_100us;
+	timer100Khz.TIMx_Config.TIMx_speed = TIMER_80Mhz_10us;
 	timer100Khz.TIMx_Config.TIMx_period = 10; // 1 ms
 	timer100Khz.TIMx_Config.TIMx_interruptEnable = BTIMER_INTERRUPT_ENABLE;
 	BasicTimer_Config(&timer100Khz);
 }
 
-/* Centelleo led de estado */
-void BasicTimer2_Callback(void){
-	GPIOxTooglePin(&blinkyLed);
-	timer2++;
-	if(timer2 > 4){
-		update_PWM_signals();
-		timer2=0;
-	}
-}
-
-/* Interrupción por recepción USART */
-void callback_USART2_RX(void){
-	data_recibida_USART = get_data_RX();
-}
-
-/* Envio de datos a 1Khz */
-void BasicTimer5_Callback(void){
-	if(timer_flag == 1){
-		modo_recepcion_data = XYZ_CONSTANT_DATA;
-	} else if (timer_flag == 2){
-		modo_recepcion_data = XYZ_2SEC_DATA;
-		timer++;
-	} else {
-		__NOP();
-	}
-}
 
 
 

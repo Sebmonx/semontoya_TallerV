@@ -53,7 +53,7 @@ void single_data_Y(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
 	float ValorY = AccelY*(0.0039*9.8);
 
 	if(Usart_handler != NULL){
-		sprintf(usart_dataBuffer, "Y axis data = %f\n", ValorY);
+		sprintf(usart_dataBuffer, "Y axis data = %.2f\n", ValorY);
 		interruptWriteMsg(Usart_handler, usart_dataBuffer);
 	}
 
@@ -69,7 +69,7 @@ void single_data_Z(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
 	float ValorZ = (float) AccelZ*(0.0039*9.8);
 
 	if(Usart_handler != NULL){
-		sprintf(usart_dataBuffer, "Z axis data = %f\n", ValorZ);
+		sprintf(usart_dataBuffer, "Z axis data = %.2f\n", ValorZ);
 		interruptWriteMsg(Usart_handler, usart_dataBuffer);
 	}
 
@@ -122,50 +122,35 @@ void constant_100Khz_measuring(I2C_Handler_t *accel_handler, BasicTimer_Handler_
 }
 
 void XYZ_dataset(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
-					axis_Data_t *xyz_Data_Archive, uint8_t set_position){
+					axis_Data_t *xyz_Data_Archive, uint16_t set_position){
 	/* Guarda las variables en la posición "set_position" y no las envía a través de
 	 * USART individualmente */
 	single_data_X(NULL, accel_handler, xyz_Data_Archive, set_position);
 	single_data_Y(NULL,	accel_handler, xyz_Data_Archive, set_position);
 	single_data_Z(NULL, accel_handler, xyz_Data_Archive, set_position);
-
-	float axisX_Value = xyz_Data_Archive->X_Data[set_position];
-	float axisY_Value = xyz_Data_Archive->Y_Data[set_position];
-	float axisZ_Value = xyz_Data_Archive->Z_Data[set_position];
-
-	sprintf(usart_dataBuffer, "(%.2f ; %.2f ; %.2f)\n",
-			xyz_Data_Archive->X_Data[set_position],
-			xyz_Data_Archive->Y_Data[set_position],
-			xyz_Data_Archive->Z_Data[set_position]);
-	interruptWriteMsg(Usart_handler, usart_dataBuffer);
 	set_position++;
-
-	if(Usart_handler != NULL){
-		sprintf(usart_dataBuffer, "(%.2f ; %.2f ; %.2f)\n",
-							axisX_Value, axisY_Value, axisZ_Value);
-		interruptWriteMsg(Usart_handler, usart_dataBuffer);
-	}
 }
 
-void print_All_Data(USART_Handler_t *Usart_handler, axis_Data_t *xyz_Data_Archive, uint8_t print_position){
+void print_All_Data(USART_Handler_t *Usart_handler, axis_Data_t *xyz_Data_Archive, uint16_t print_position){
 	print_position = 0;
 	sprintf(usart_dataBuffer, "3 Axis data\n(x ; y ; z)\n");
 	interruptWriteMsg(Usart_handler, usart_dataBuffer);
 
-	do {
-		float axisX_Value = xyz_Data_Archive->X_Data[print_position];
-		float axisY_Value = xyz_Data_Archive->Y_Data[print_position];
-		float axisZ_Value = xyz_Data_Archive->Z_Data[print_position];
-
-		sprintf(usart_dataBuffer, "(%.2f ; %.2f ; %.2f)\n", axisX_Value, axisY_Value, axisZ_Value);
+	for(int i = print_position; i < BIGDATA_BUFFER; i++){
+		sprintf(usart_dataBuffer, "(%.2f ; %.2f ; %.2f)\n",
+					xyz_Data_Archive->X_Data[print_position],
+					xyz_Data_Archive->Y_Data[print_position],
+					xyz_Data_Archive->Z_Data[print_position]);
 		interruptWriteMsg(Usart_handler, usart_dataBuffer);
+	}
+}
 
-		if(print_position == (sizeof(xyz_Data_Archive)/sizeof(float))){
-			print_position = 0;
-		}
-		print_position++;
-
-	} while(xyz_Data_Archive->Z_Data[print_position] != 0);
+void print_XYZ_Data(axis_Data_t *xyz_Data, USART_Handler_t *Usart_handler, uint16_t print_position){
+	sprintf(usart_dataBuffer, "(%.2f ; %.2f ; %.2f)\n",
+			xyz_Data->X_Data[print_position],
+			xyz_Data->Y_Data[print_position],
+			xyz_Data->Z_Data[print_position]);
+	interruptWriteMsg(Usart_handler, usart_dataBuffer);
 }
 
 float raw_data_X(I2C_Handler_t *accel_handler){

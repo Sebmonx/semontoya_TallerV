@@ -118,6 +118,7 @@ void i2c_reStartTransaction(I2C_Handler_t *ptrHandlerI2C){
 /* Indicación ACK a esclavo */
 void i2c_sendAck(I2C_Handler_t *ptrHandlerI2C){
 	/* Escribir 0 en ACK de CR1 */
+	ptrHandlerI2C->ptrI2Cx->CR1 &= ~I2C_CR1_ACK;
 	ptrHandlerI2C->ptrI2Cx->CR1 |= I2C_CR1_ACK;
 }
 

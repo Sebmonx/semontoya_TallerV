@@ -55,10 +55,12 @@ void measure_Mode_config(I2C_Handler_t *accel_handler);
 void constant_100Khz_measuring(I2C_Handler_t *accel_handler, BasicTimer_Handler_t *timer100Khz_handler,
 								GPIO_Handler_t *pinTimer100khz);
 void XYZ_dataset(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
-					axis_Data_t *xyz_Data_archive, uint8_t set_position);
-void print_All_Data(USART_Handler_t *Usart_handler, axis_Data_t *xyz_Data_Archive, uint8_t print_position);
+					axis_Data_t *xyz_Data_archive, uint16_t set_position);
+void print_All_Data(USART_Handler_t *Usart_handler, axis_Data_t *xyz_Data_Archive, uint16_t print_position);
 float raw_data_X(I2C_Handler_t *accel_handler);
 float raw_data_Y(I2C_Handler_t *accel_handler);
 float raw_data_Z(I2C_Handler_t *accel_handler);
+void print_XYZ_Data(axis_Data_t *xyz_Data, USART_Handler_t *Usart_handler, uint16_t print_position);
+
 
 #endif /* ACELEROMETRODRIVER_H_ */

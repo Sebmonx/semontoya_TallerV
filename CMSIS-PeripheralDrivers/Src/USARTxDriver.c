@@ -7,6 +7,7 @@
 
 #include <stm32f4xx.h>
 #include <string.h>
+#include <stdlib.h>
 #include "USARTxDriver.h"
 #include "PLLDriver.h"
 
@@ -15,10 +16,11 @@ uint8_t auxiliar_data_RX = 0;
 uint8_t auxiliar_data_TX = 0;
 uint8_t used_USART = 0;
 
+uint8_t newData = 1;
 uint8_t dataType = 0;
 uint8_t contador = 0;
 char dataToSend = 0;
-char mensaje[128];
+char *mensaje;
 /**
  * Configurando el puerto Serial...
  * Recordar que siempre se debe comenzar con activar la señal de reloj
@@ -349,6 +351,7 @@ void USART2_IRQHandler(void){
 			} else if (mensaje[contador] == '\0'){
 				USART2->CR1 &= ~USART_CR1_TXEIE;
 				contador = 0;
+				newData = 1;
 			}
 		}
 	}
@@ -372,6 +375,7 @@ void USART6_IRQHandler(void){
 			} else if (mensaje[contador] == '\0'){
 				USART6->CR1 &= ~USART_CR1_TXEIE;
 				contador = 0;
+				newData = 1;
 			}
 		}
 	}
@@ -414,10 +418,15 @@ void interruptWriteChar(USART_Handler_t *ptrUsartHandler, char caracter){
 }
 
 void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word){
+	while(newData == 0){
+		__NOP();
+	}
 	dataType = WORD;
+	mensaje = malloc(strlen(word));
 	strcpy(mensaje, word);
 	contador = 0;
 	ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
+	newData = 0;
 }
 
 __attribute__ ((weak)) void callback_USART1_RX(void){
