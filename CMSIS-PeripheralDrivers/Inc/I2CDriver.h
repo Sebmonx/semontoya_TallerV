@@ -29,7 +29,7 @@
 #define I2C_MAX_TRISE_SM_16Mhz		17
 #define I2C_MAX_TRISE_FM_16Mhz		5
 #define I2C_MAX_TRISE_SM_80Mhz		41
-#define I2C_MAX_TRISE_FM_80Mhz		13
+#define I2C_MAX_TRISE_FM_80Mhz		12
 
 
 

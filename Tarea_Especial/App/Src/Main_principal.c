@@ -165,7 +165,9 @@ int main(void){
 			}
 
 		} else if (modo_recepcion_data == XYZ_2SEC_DATA){
-			XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo,posicion_muestreo);
+			for(int i = posicion_muestreo; i < BIGDATA_BUFFER; i++){
+				XYZ_dataset(&USART2_handler,&AXL345, &datos_muestreo,posicion_muestreo);
+			}
 			timer++;
 			if(timer == 2000){
 				timer_flag = 0;
@@ -430,7 +432,7 @@ void inicializacion_timer_100Khz(void){
 	timer100Khz.ptrTIMx = TIM5;
 	timer100Khz.TIMx_Config.TIMx_mode = BTIMER_MODE_UP;
 	timer100Khz.TIMx_Config.TIMx_speed = TIMER_80Mhz_10us;
-	timer100Khz.TIMx_Config.TIMx_period = 10; // 1 ms
+	timer100Khz.TIMx_Config.TIMx_period = 100; // 1 ms
 	timer100Khz.TIMx_Config.TIMx_interruptEnable = BTIMER_INTERRUPT_ENABLE;
 	BasicTimer_Config(&timer100Khz);
 }
