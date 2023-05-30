@@ -502,9 +502,9 @@ void inicializacion_timer_100Khz(void){
 	BasicTimer_Config(&timer100Khz);
 }
 
+/* Configuración para pines a usar en LCD */
 void inicializacion_LCD(void){
 
-	// COnfiguracion I2C LCD
 	pinACL_LCD.pGPIOx        					  = GPIOB;
 	pinACL_LCD.GPIO_PinConfig.GPIO_PinNumber 	  = PIN_10;
 	pinACL_LCD.GPIO_PinConfig.GPIO_PinMode  	  = GPIO_MODE_ALTFN;
