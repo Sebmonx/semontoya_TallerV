@@ -99,7 +99,9 @@ void read_PowerMode(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler
 
 void measure_Mode_config(I2C_Handler_t *accel_handler){
  	/* Configuración a modo de medida*/
+	i2c_writeSingleRegister(accel_handler, 0x2C,0xF);
 	i2c_writeSingleRegister(accel_handler, POWER_CTL, MEASURE_MODE);
+
 }
 
 void constant_100Khz_measuring(I2C_Handler_t *accel_handler, BasicTimer_Handler_t *timer100Khz_handler,

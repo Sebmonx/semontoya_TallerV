@@ -16,6 +16,7 @@
 #include "SysTickDriver.h"
 #include "USARTxDriver.h"
 #include "AcelerometroDriver.h"
+#include "LCDDriver.h"
 
 
 #define TIMER_80Mhz_100us 	8100
@@ -41,6 +42,7 @@ USART_Handler_t USART2_handler = {0};
 GPIO_Handler_t PinTX_U6_handler = {0};
 GPIO_Handler_t PinRX_U6_handler = {0};
 USART_Handler_t USART6_handler = {0};
+
 // LED de estado
 BasicTimer_Handler_t timerLed = {0};
 GPIO_Handler_t blinkyLed = {0};
@@ -52,9 +54,15 @@ system_Clock_data data_Reloj = {0};
 // I2C
 GPIO_Handler_t pin_timer100Khz = {0};
 BasicTimer_Handler_t timer100Khz = {0};
+
 GPIO_Handler_t pinSCL_AXL345 = {0};
 GPIO_Handler_t pinSDA_AXL345 = {0};
 I2C_Handler_t AXL345 = {0};
+ //LCD direccion 0x22
+BasicTimer_Handler_t timer_LCD = {0};
+GPIO_Handler_t pinSCDA_LCD = {0};
+GPIO_Handler_t pinACL_LCD = {0};
+I2C_Handler_t LCD_handler = {0};
 /* ######## */
 
 
@@ -73,7 +81,7 @@ uint16_t posicion_iZ= 0;
 
 axis_Data_t datos_muestreo = {0};
 uint16_t posicion_muestreo = 0;
-
+uint8_t startTimer = {0};
 /* ######### */
 
 
@@ -85,11 +93,14 @@ void inicializacion_Led_Estado(void);
 void inicializacion_pines_I2C(void);
 void inicializacion_timer_100Khz(void);
 void inicializacion_USART6(void);
+void inicializacion_LCD(void);
 /* ######################## */
 
 /* Otras funciones */
 void print_Clock_Config(void);
 uint16_t dutty_calculation(PWM_Handler_t *PWM_handler, float data);
+void datos_LCD(void);
+void encenderLCD(void);
 /* ############### */
 
 int main(void){
@@ -105,6 +116,8 @@ int main(void){
 	inicializacion_timer_100Khz();
 	inicializacion_PWM();
 	inicializacion_AXL345(&USART2_handler, &AXL345);
+	inicializacion_LCD();
+	encenderLCD();
 
 	while(1){
 		 if(modo_recepcion_data == XYZ_CONSTANT_DATA){
@@ -177,6 +190,9 @@ int main(void){
 			}
 			modo_recepcion_data = STANDARD_DATA;
 		}
+		 if(startTimer == 1){
+			 datos_LCD();
+		 }
 	}
 }
 
@@ -223,6 +239,50 @@ void update_PWM_signals(void){
 	updateDuttyCycle(&PWMZ_handler, z_dutty);
 }
 
+void encenderLCD(void){
+
+	LCD_setCursor(&LCD_handler, 0, 0);
+	LCD_sendSTR(&LCD_handler, "Eje X = ");
+	LCD_setCursor(&LCD_handler, 0, 16);
+	LCD_sendSTR(&LCD_handler, "m/s2");
+	LCD_setCursor(&LCD_handler, 1, 0);
+	LCD_sendSTR(&LCD_handler, "Eje Y = ");
+	LCD_setCursor(&LCD_handler, 1, 16);
+	LCD_sendSTR(&LCD_handler, "m/s2");
+	LCD_setCursor(&LCD_handler, 2, 0);
+	LCD_sendSTR(&LCD_handler, "Eje Z = ");
+	LCD_setCursor(&LCD_handler, 2, 16);
+	LCD_sendSTR(&LCD_handler, "m/s2");
+	LCD_setCursor(&LCD_handler, 3, 0);
+	LCD_sendSTR(&LCD_handler, "Auxilio :)");
+
+}
+
+void datos_LCD(void){
+
+	if(startTimer == 1){
+
+		float ValorX= raw_data_X(&AXL345);
+		sprintf(usart_buffer, "%.2f ", ValorX);
+		LCD_setCursor(&LCD_handler, 0, 9);
+		LCD_sendSTR(&LCD_handler, usart_buffer);
+
+		float AceleracionY= raw_data_Y(&AXL345);
+		sprintf(usart_buffer, "%.2f ", AceleracionY);
+		LCD_setCursor(&LCD_handler, 1, 9);
+		LCD_sendSTR(&LCD_handler, usart_buffer);
+
+		float AceleracionZ = raw_data_Z(&AXL345);
+		sprintf(usart_buffer, "%.2f ", AceleracionZ);
+		LCD_setCursor(&LCD_handler, 2, 9);
+		LCD_sendSTR(&LCD_handler, usart_buffer);
+		LCD_setCursor(&LCD_handler, 3, 0);
+
+		startTimer =! startTimer;
+	}
+
+}
+
 /* Centelleo led de estado */
 void BasicTimer2_Callback(void){
 	GPIOxTooglePin(&blinkyLed);
@@ -236,6 +296,10 @@ void BasicTimer2_Callback(void){
 /* Interrupción por recepción USART */
 void callback_USART2_RX(void){
 	data_recibida_USART = get_data_RX();
+}
+
+void BasicTimer4_Callback(void){
+	startTimer =! startTimer;
 }
 
 /* Envio de datos a 1Khz */
@@ -438,7 +502,43 @@ void inicializacion_timer_100Khz(void){
 	BasicTimer_Config(&timer100Khz);
 }
 
+void inicializacion_LCD(void){
 
+	// COnfiguracion I2C LCD
+	pinACL_LCD.pGPIOx        					  = GPIOB;
+	pinACL_LCD.GPIO_PinConfig.GPIO_PinNumber 	  = PIN_10;
+	pinACL_LCD.GPIO_PinConfig.GPIO_PinMode  	  = GPIO_MODE_ALTFN;
+	pinACL_LCD.GPIO_PinConfig.GPIO_PinOType	  = GPIO_OTYPE_OPENDRAIN;
+	pinACL_LCD.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
+	pinACL_LCD.GPIO_PinConfig.GPIO_PinSpeed       = GPIO_OSPEED_FAST;
+	pinACL_LCD.GPIO_PinConfig.GPIO_PinAltFunMode  = AF4;
+	GPIO_Config(&pinACL_LCD);
+
+	pinSCDA_LCD.pGPIOx        					  = GPIOB;
+	pinSCDA_LCD.GPIO_PinConfig.GPIO_PinNumber 	  = PIN_3;
+	pinSCDA_LCD.GPIO_PinConfig.GPIO_PinMode  	  = GPIO_MODE_ALTFN;
+	pinSCDA_LCD.GPIO_PinConfig.GPIO_PinOType	  = GPIO_OTYPE_OPENDRAIN;
+	pinSCDA_LCD.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
+	pinSCDA_LCD.GPIO_PinConfig.GPIO_PinSpeed       = GPIO_OSPEED_FAST;
+	pinSCDA_LCD.GPIO_PinConfig.GPIO_PinAltFunMode  = AF9;
+	GPIO_Config(&pinSCDA_LCD);
+
+	timer_LCD.ptrTIMx                          = TIM4;
+	timer_LCD.TIMx_Config.TIMx_mode            = BTIMER_MODE_UP;
+	timer_LCD.TIMx_Config.TIMx_speed           = TIMER_80Mhz_100us;
+	timer_LCD.TIMx_Config.TIMx_period          = 10000;
+	timer_LCD.TIMx_Config.TIMx_interruptEnable = BTIMER_INTERRUPT_ENABLE;
+	BasicTimer_Config(&timer_LCD);
+
+	LCD_handler.ptrI2Cx      = I2C2;
+	LCD_handler.modeI2C      = I2C_MODE_FM;
+	LCD_handler.slaveAddress = 0x22;
+	LCD_handler.MCU_frequency = 80;
+	i2c_config(&LCD_handler);
+	LCD_Init(&LCD_handler);
+
+//	encenderLCD();
+}
 
 
 

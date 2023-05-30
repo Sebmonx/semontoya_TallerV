@@ -422,8 +422,7 @@ void interruptWriteMsg(USART_Handler_t *ptrUsartHandler, char *word){
 		__NOP();
 	}
 	dataType = WORD;
-	mensaje = malloc(strlen(word));
-	strcpy(mensaje, word);
+	mensaje = word;
 	contador = 0;
 	ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
 	newData = 0;
