@@ -40,7 +40,7 @@ GPIO_Handler_t blinkyLed = {0};
 /* Variables */
 char data_recibida_USART2 = 0;
 uint16_t valor_Dutty = 1500;
-char mensaje[128];
+char buffer[128];
 
 // Funciones a utilizar
 void inicializacion_PWM(void);
@@ -60,17 +60,17 @@ int main(void)
 		if(data_recibida_USART2 != '\0') {
 
 			if(data_recibida_USART2 == 'D'){
-				valor_Dutty -= 10;
+				valor_Dutty -= 500;
 				updateDuttyCycle(&PWM_handler, valor_Dutty);
 			}
 			if(data_recibida_USART2 == 'E'){
-				valor_Dutty += 10;
+				valor_Dutty += 500;
 				updateDuttyCycle(&PWM_handler, valor_Dutty);
 			}
 
 			/* Imprimir mensaje */
-			sprintf(mensaje, "dutty = %u \n", (unsigned int)valor_Dutty);
-			writeWord(&USART2_handler, mensaje);
+			sprintf(buffer, "dutty = %u \n", (unsigned int)valor_Dutty);
+			interruptWriteMsg(&USART2_handler, buffer);
 
 			data_recibida_USART2 = '\0';
 		}
@@ -126,8 +126,9 @@ void inicializacion_pines_USART(void){
 	USART2_handler.USART_Config.USART_datasize = USART_DATASIZE_8BIT;
 	USART2_handler.USART_Config.USART_parity = USART_PARITY_NONE;
 	USART2_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
-	USART2_handler.USART_Config.USART_enableIntRX = USART_INTERRUPT_RX_ENABLE;
-	USART2_handler.USART_Config.USART_enableIntTX = USART_INTERRUPT_TX_NONE;
+	USART2_handler.USART_Config.USART_enableIntRX = ENABLE;
+	USART2_handler.USART_Config.USART_enableIntTX = ENABLE;
+	USART2_handler.USART_Config.MCU_frequency = 16;
 	USART_Config(&USART2_handler);
 }
 
@@ -136,9 +137,9 @@ void inicializacion_Led_Estado(void){
 	// Timer para LED de estado usando el LED2
 	timerLed.ptrTIMx = TIM2;
 	timerLed.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
-	timerLed.TIMx_Config.TIMx_speed = BTIMER_SPEED_1ms;
-	timerLed.TIMx_Config.TIMx_period = 300; 			// Tiempo en milisegundos
-	timerLed.TIMx_Config.TIMx_interruptEnable = 1; 		// Activar interrupción
+	timerLed.TIMx_Config.TIMx_speed = BITMER_SPEED_16Mhz_100us;
+	timerLed.TIMx_Config.TIMx_period = 2500; 			// Tiempo en milisegundos
+	timerLed.TIMx_Config.TIMx_interruptEnable = ENABLE; // Activar interrupción
 	BasicTimer_Config(&timerLed);
 
 	// Controlador de LED2 asignado como led de estado

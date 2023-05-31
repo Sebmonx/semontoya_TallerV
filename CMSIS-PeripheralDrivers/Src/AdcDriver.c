@@ -8,7 +8,7 @@
 #include "GPIOxDriver.h"
 
 GPIO_Handler_t handlerAdcPin = {0};
-uint16_t	adcRawData = 0;
+uint16_t adcRawData = 0;
 
 void adc_Config(ADC_Config_t *adcConfig){
 	/* 1. Configuramos el PinX para que cumpla la función de canal análogo deseado. */
@@ -80,7 +80,7 @@ void adc_Config(ADC_Config_t *adcConfig){
 		ADC1->SMPR2 |= adcConfig->samplingPeriod << (3 * adcConfig->channel);
 	}
 	else{
-		ADC1->SMPR2 |= adcConfig->samplingPeriod << (3 * (adcConfig->channel-10));
+		ADC1->SMPR1 |= adcConfig->samplingPeriod << (3 * (adcConfig->channel-10));
 	}
 
 	/* 8. Configuramos la secuencia y cuantos elementos hay en la secuencia */
@@ -194,7 +194,6 @@ void configAnalogPin(uint8_t adcChannel) {
 		// Es el pin PA0
 		handlerAdcPin.pGPIOx 						= GPIOA;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_0;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		// Nota: Para el ejercicio inicial solo se necesita este canal, los demas
 		// se necesitan para trabajos posteriores.
 		break;
@@ -205,7 +204,6 @@ void configAnalogPin(uint8_t adcChannel) {
 		// PIN A1
 		handlerAdcPin.pGPIOx 						= GPIOA;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_1;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 
@@ -213,7 +211,6 @@ void configAnalogPin(uint8_t adcChannel) {
 		// PIN A2
 		handlerAdcPin.pGPIOx 						= GPIOA;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_2;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 
@@ -221,7 +218,6 @@ void configAnalogPin(uint8_t adcChannel) {
 		// PIN A3
 		handlerAdcPin.pGPIOx 						= GPIOA;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_3;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 
@@ -229,8 +225,6 @@ void configAnalogPin(uint8_t adcChannel) {
 		// PIN A4
 		handlerAdcPin.pGPIOx 						= GPIOA;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_4;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
-
 		break;
 	}
 
@@ -238,78 +232,66 @@ void configAnalogPin(uint8_t adcChannel) {
 		// PIN A5
 		handlerAdcPin.pGPIOx 						= GPIOA;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
-		
 		break;
 	}
 	case ADC_CHANNEL_6: {
 		// PIN A6
 		handlerAdcPin.pGPIOx 						= GPIOA;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_6;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 	case ADC_CHANNEL_7: {
 		// PIN A7
 		handlerAdcPin.pGPIOx 						= GPIOA;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_7;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 	case ADC_CHANNEL_8: {
 		//Pin PB0
 		handlerAdcPin.pGPIOx 						= GPIOB;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_0;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 	case ADC_CHANNEL_9: {
 		//Pin PB1
 		handlerAdcPin.pGPIOx 						= GPIOB;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_1;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 	case ADC_CHANNEL_10: {
 		//Pin PC0
 		handlerAdcPin.pGPIOx 						= GPIOC;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_0;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 	case ADC_CHANNEL_11: {
 		//Pin PC1
 		handlerAdcPin.pGPIOx 						= GPIOC;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_1;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 	case ADC_CHANNEL_12: {
 		//Pin PC2
 		handlerAdcPin.pGPIOx 						= GPIOC;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_2;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 	case ADC_CHANNEL_13: {
 		//Pin PC3
 		handlerAdcPin.pGPIOx 						= GPIOC;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_3;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 	case ADC_CHANNEL_14: {
 		//Pin PC4
 		handlerAdcPin.pGPIOx 						= GPIOC;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_4;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 	case ADC_CHANNEL_15: {
 		//Pin PC5
 		handlerAdcPin.pGPIOx 						= GPIOC;
 		handlerAdcPin.GPIO_PinConfig.GPIO_PinNumber = PIN_5;
-		handlerAdcPin.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
 		break;
 	}
 	default: {

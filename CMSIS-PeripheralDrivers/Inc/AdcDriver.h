@@ -51,7 +51,7 @@ typedef struct
 	uint8_t		resolution;		// Precisión con la que el ADC hace la adquisición del dato
 	uint16_t	samplingPeriod;	// Tiempo deseado para hacer la adquisición del dato
 	uint8_t		dataAlignment;	// Alineación a la izquierda o a la derecha
-	uint16_t	adcData;			//Dato de la conversión
+	uint16_t	adcData;		//Dato de la conversión
 }ADC_Config_t;
 
 void adc_Config(ADC_Config_t *adcConfig);
