@@ -50,6 +50,9 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 	else if(ptrUsartHandler->ptrUSARTx == USART6){
 		RCC->APB2ENR |= RCC_APB2ENR_USART6EN;
 	}
+	else{
+		__NOP();
+	}
 
 	/* 2. Configuramos el tamaño del dato, la paridad y los bit de parada */
 	/* En el CR1 estan parity (PCE y PS) y tamaño del dato (M) */
@@ -73,11 +76,12 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 			// Es even, entonces cargamos la configuracion adecuada
 			ptrUsartHandler->ptrUSARTx->CR1 &= ~USART_CR1_PS;
 			
-		}else{
+		} else {
 			// Si es "else" significa que la paridad seleccionada es ODD, y cargamos esta configuracion
 			ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_PS;
 		}
-	}else{
+	}
+	else {
 		// Si llegamos aca, es porque no deseamos tener el parity-check
 		ptrUsartHandler->ptrUSARTx->CR1 &= ~USART_CR1_PCE;
 	}
@@ -85,7 +89,8 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 	// 2.3 Configuramos el tamaño del dato
     if(ptrUsartHandler->USART_Config.USART_datasize == USART_DATASIZE_8BIT){
     	ptrUsartHandler->ptrUSARTx->CR1 &= ~USART_CR1_M;
-    } else {
+    }
+    else {
     	ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_M;
     }
 
@@ -360,15 +365,15 @@ void USART2_IRQHandler(void){
 void USART6_IRQHandler(void){
 	if(USART6->SR & USART_SR_RXNE){
 		auxiliar_data_RX = (uint8_t) USART6->DR;
-		callback_USART6_RX();
+		callback_USART2_RX();
 	}
 	else if(USART6->SR & USART_SR_TXE){
 		if(dataType == CHAR){
 			USART6->DR = dataToSend;
 			USART6->CR1 &= ~USART_CR1_TXEIE;
 		}
-		else {
-			if(buffer[contador]!='\0'){
+		else if(dataType == WORD) {
+			if(buffer[contador] != '\0'){
 				dataToSend = buffer[contador];
 				USART6->DR = dataToSend;
 				contador++;

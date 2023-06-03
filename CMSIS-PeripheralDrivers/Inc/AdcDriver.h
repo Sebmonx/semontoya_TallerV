@@ -45,6 +45,9 @@
 #define ADC_SAMPLING_PERIOD_144_CYCLES	0b110;
 #define ADC_SAMPLING_PERIOD_480_CYCLES	0b111;
 
+#define MILIVOLTS 	0
+#define MICROVOLTS	1
+
 typedef struct
 {
 	uint8_t		channel;		// Canal ADC que será utilizado para la conversión ADC

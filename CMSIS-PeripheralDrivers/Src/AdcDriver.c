@@ -159,6 +159,38 @@ uint16_t getADC(void){
 	return adcRawData;
 }
 
+float get_Voltage(ADC_Config_t *adcConfig, uint8_t unidad){
+
+	float measured_voltage = 3.3;
+
+	switch(adcConfig->resolution){
+
+		case ADC_RESOLUTION_12_BIT:
+			measured_voltage = measured_voltage/4095;
+			break;
+
+		case ADC_RESOLUTION_10_BIT:
+			measured_voltage = measured_voltage/1023;
+			break;
+
+		case ADC_RESOLUTION_8_BIT:
+			measured_voltage = measured_voltage/256;
+			break;
+
+		case ADC_RESOLUTION_6_BIT:
+			measured_voltage = measured_voltage/64;
+			break;
+
+		default:
+			__NOP();
+			break;
+	}
+
+	measured_voltage = measured_voltage*adcRawData;
+	return measured_voltage;
+
+}
+
 /* 
  * Esta es la ISR de la interrupción por conversión ADC 
  */
