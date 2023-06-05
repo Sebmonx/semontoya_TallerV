@@ -5,6 +5,7 @@
  *      Author: Sebastian Montoya
  */
 #include "PwmDriver.h"
+#include <math.h>
 
 /**/
 void pwm_Config(PWM_Handler_t *ptrPwmHandler){
@@ -291,6 +292,20 @@ void updateDuttyCycle(PWM_Handler_t *ptrPwmHandler, uint16_t newDutty){
 	setDuttyCycle(ptrPwmHandler);
 }
 
+uint16_t dutty_calculation(PWM_Handler_t *PWM_handler, float data){
+	float auxData = fabs(data);
+	uint16_t newDutty = 0;
+	if(data == 0){
+		newDutty = (PWM_handler->config.periodo/2);
+	}
+	else if(data < 0){
+		newDutty = (auxData/20) * (PWM_handler->config.periodo);
+	}
+	else if(data > 0){
+		newDutty = (PWM_handler->config.periodo) * (1/2 + (auxData/20));
+	}
+	return newDutty;
+}
 
 
 

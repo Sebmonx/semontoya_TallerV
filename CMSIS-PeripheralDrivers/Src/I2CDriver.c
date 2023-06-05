@@ -88,6 +88,7 @@ void i2c_startTransaction(I2C_Handler_t *ptrHandlerI2C){
 		__NOP();
 	}
 
+
 	/* Generar señal de inicio */
 	ptrHandlerI2C->ptrI2Cx->CR1 |= I2C_CR1_START;
 

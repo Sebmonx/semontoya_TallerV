@@ -14,6 +14,7 @@
 #include "BasicTimer.h"
 #include "GPIOxDriver.h"
 
+
 #define AXL345_ADDRESS	0x1D //Acelerometro AXL345
 #define ACCEL_XOUT_L	0x32
 #define ACCEL_XOUT_H	0x33
@@ -62,5 +63,6 @@ float raw_data_Y(I2C_Handler_t *accel_handler);
 float raw_data_Z(I2C_Handler_t *accel_handler);
 void print_XYZ_Data(axis_Data_t *xyz_Data, USART_Handler_t *Usart_handler, uint16_t print_position);
 
+float read_XYZ_data(I2C_Handler_t *accel_handler, axis_Data_t *axis_Data);
 
 #endif /* ACELEROMETRODRIVER_H_ */

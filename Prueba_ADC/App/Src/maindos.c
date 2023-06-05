@@ -37,7 +37,10 @@ GPIO_Handler_t blinkyLedH0 = {0};
 
 // Handler ADC
 ADC_Config_t adc_handler = {0};
-uint16_t data_ADC = 0;
+uint16_t ADC_Data[2] = {0};
+uint8_t ADC_Contador = 0;
+uint8_t numero_De_Canales = 0;
+uint8_t ADC_Completo = 0;
 
 // Variables transmisión USART
 GPIO_Handler_t PinTX2_handler = {0};
@@ -82,20 +85,13 @@ int main(void)
     /* Loop forever */
 	while(1){
 		if(data_recibida_USART != '\0'){
-			buffer_Recepcion[contador_recepcion] = data_recibida_USART;
-			contador_recepcion++;
-
-			if(data_recibida_USART == '<'){
-				string_completada = true;
-				buffer_Recepcion[contador_recepcion - 1] = '\0';
-				contador_recepcion = 0;
+			if(data_recibida_USART == 'a'){
+				startSingleADC();
+				startSingleADC();
+				sprintf(buffer_datos,"%d , %d", ADC_Data[0], ADC_Data[1]);
+				interruptWriteMsg(&USART_handler, buffer_datos);
+				data_recibida_USART = '\0';
 			}
-
-			data_recibida_USART = '\0';
-		}
-		if(string_completada){
-			chequear_Comando(buffer_Recepcion);
-			string_completada = false;
 		}
 	}
 	return 0;
@@ -145,15 +141,23 @@ void callback_USART2_RX(void){
 }
 
 void adcComplete_Callback(void){
-	data_ADC = getADC();
+	ADC_Data[ADC_Contador] = getADC();
+	ADC_Contador++;
+	if(ADC_Contador == numero_De_Canales){
+		ADC_Contador = 0;
+		ADC_Completo = 1;
+	}
 }
 
 void inicializacion_ADC_CH0(void){
-	adc_handler.channel = ADC_CHANNEL_0;
+	adc_handler.channel[0] = ADC_CHANNEL_0;
+	adc_handler.channel[1] = ADC_CHANNEL_1;
 	adc_handler.dataAlignment = ADC_ALIGNMENT_RIGHT;
 	adc_handler.resolution = ADC_RESOLUTION_10_BIT;
 	adc_handler.samplingPeriod = ADC_SAMPLING_PERIOD_15_CYCLES;
-	adc_Config(&adc_handler);
+	numero_De_Canales = 2;
+	adc_Config_MultiCH(&adc_handler, numero_De_Canales);
+
 }
 
 

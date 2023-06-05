@@ -50,7 +50,7 @@
 
 typedef struct
 {
-	uint8_t		channel;		// Canal ADC que será utilizado para la conversión ADC
+	uint8_t		channel[16];		// Canal ADC que será utilizado para la conversión ADC
 	uint8_t		resolution;		// Precisión con la que el ADC hace la adquisición del dato
 	uint16_t	samplingPeriod;	// Tiempo deseado para hacer la adquisición del dato
 	uint8_t		dataAlignment;	// Alineación a la izquierda o a la derecha
@@ -58,6 +58,7 @@ typedef struct
 }ADC_Config_t;
 
 void adc_Config(ADC_Config_t *adcConfig);
+void adc_Config_MultiCH(ADC_Config_t *adcConfig, uint8_t numberOfCH);
 void configAnalogPin(uint8_t adcChannel);
 void adcComplete_Callback(void);
 void startSingleADC(void);
