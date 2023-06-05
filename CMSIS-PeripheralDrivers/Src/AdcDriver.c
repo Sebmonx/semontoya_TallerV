@@ -6,6 +6,7 @@
  */
 #include "AdcDriver.h"
 #include "GPIOxDriver.h"
+#include "PLLDriver.h"
 
 GPIO_Handler_t handlerAdcPin = {0};
 uint16_t adcRawData = 0;
@@ -156,8 +157,8 @@ void adc_Config_MultiCH(ADC_Config_t *adcConfig, uint8_t numberOfCH){
 		}
 	}
 
-	/* 4. Configuramos el modo Scan como desactivado */
-	ADC1->CR1 &= ~ADC_CR1_SCAN;
+	/* 4. Activamos el modo Scan */
+	ADC1->CR1 |= ADC_CR1_SCAN;
 
 	/* 5. Configuramos la alineación de los datos (derecha o izquierda) */
 	if(adcConfig->dataAlignment == ADC_ALIGNMENT_RIGHT){
@@ -180,10 +181,10 @@ void adc_Config_MultiCH(ADC_Config_t *adcConfig, uint8_t numberOfCH){
 
 	for(int i = 0; i < numberOfCH; i++){
 		if(adcConfig->channel[i] < ADC_CHANNEL_9){
-			ADC1->SMPR2 |= adcConfig->samplingPeriod << (3 * adcConfig->channel[i]);
+			ADC1->SMPR2 |= adcConfig->samplingPeriod[i] << (3 * adcConfig->channel[i]);
 		}
 		else{
-			ADC1->SMPR1 |= adcConfig->samplingPeriod << (3 * (adcConfig->channel[i]-10));
+			ADC1->SMPR1 |= adcConfig->samplingPeriod[i] << (3 * (adcConfig->channel[i]-10));
 		}
 
 		/* 8. Configuramos la secuencia y cuantos elementos hay en la secuencia */
@@ -201,7 +202,12 @@ void adc_Config_MultiCH(ADC_Config_t *adcConfig, uint8_t numberOfCH){
 	}
 
 	/* 9. Configuramos el preescaler del ADC en 2:1 (el mas rápido que se puede tener */
-	ADC->CCR |= ADC_CCR_ADCPRE_0;
+	if(getPLL() > 70){
+		ADC->CCR |= ADC_CCR_ADCPRE_0;
+	}
+	else {
+		ADC->CCR &= ~ADC_CCR_ADCPRE;
+	}
 
 	/* 10. Desactivamos las interrupciones globales */
 	__disable_irq();
@@ -209,11 +215,14 @@ void adc_Config_MultiCH(ADC_Config_t *adcConfig, uint8_t numberOfCH){
 	/* 11. Activamos la interrupción debida a la finalización de una conversión EOC (CR1)*/
 	ADC1->CR1 |= ADC_CR1_EOCIE;
 
+	/* Configurar interrupción cuando acaba con cada canal */
+	ADC1->CR2 |= ADC_CR2_EOCS;
+
 	/* 11a. Matriculamos la interrupción en el NVIC*/
 	__NVIC_EnableIRQ(ADC_IRQn);
 
 	/* 11b. Configuramos la prioridad para la interrupción ADC */
-//	ADC1->SQR1 &= ~ADC_SQR1_L;
+	__NVIC_SetPriority(ADC_IRQn, 6);
 
 	/* 12. Activamos el modulo ADC */
 	ADC1->CR2 |= ADC_CR2_ADON;

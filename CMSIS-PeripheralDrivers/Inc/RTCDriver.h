@@ -41,7 +41,7 @@ typedef struct
 void RTC_config(void);
 void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds);
 void RTC_Date_Change(uint16_t year, uint8_t month, uint8_t date, uint8_t weekday);
-void save_RTC_Data(current_RTC_t ptrRTC_DAta);
+void save_RTC_Data(current_RTC_t *ptrRTC_DAta);
 uint8_t binaryToBCD(uint16_t bin_Value);
 
 #define RTC_KEY1	0XCA

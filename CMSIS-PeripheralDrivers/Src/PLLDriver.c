@@ -385,3 +385,49 @@ void systemClock_GetConfig(system_Clock_data *ptrClockData){
 	/* Latencia FLASH */
 	/* Pendiente */
 }
+
+uint8_t getPLL(void){
+	/* Frecuencia actual en reloj */
+	uint8_t factor_aux = 0;
+	uint8_t frecuencia = 16;
+
+	// Definir y dividir Factor M
+	factor_aux = (RCC->PLLCFGR & RCC_PLLCFGR_PLLM)>> RCC_PLLCFGR_PLLM_Pos; // Definir Factor M
+	frecuencia = frecuencia/factor_aux;
+	factor_aux = 0;
+
+	// Definir y multiplicar Factor N
+	factor_aux = (RCC->PLLCFGR & RCC_PLLCFGR_PLLN)>> RCC_PLLCFGR_PLLN_Pos;
+	frecuencia = frecuencia*factor_aux;
+	factor_aux = 0;
+
+	// Definir y dividir Factor P
+	factor_aux = (RCC->PLLCFGR & RCC_PLLCFGR_PLLP)>> RCC_PLLCFGR_PLLP_Pos;
+	switch(factor_aux){
+		case 0:{
+			factor_aux = 2;
+			break;
+		}
+		case 1:{
+			factor_aux = 4;
+			break;
+		}
+		case 2:{
+			factor_aux = 6;
+			break;
+		}
+		case 3:{
+			factor_aux = 8;
+			break;
+		}
+		default:{
+			__NOP();
+			break;
+		}
+	}
+	frecuencia = frecuencia/factor_aux;
+
+	return frecuencia;
+}
+
+

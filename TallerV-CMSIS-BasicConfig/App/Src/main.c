@@ -17,6 +17,9 @@
  */
 
 #include <stdint.h>
+#include <string.h>
+#include <stdbool.h>
+#include <string.h>
 #include "BasicTimer.h"
 #include "ExtiDriver.h"
 #include "GPIOxDriver.h"
@@ -25,6 +28,8 @@
 #include "PwmDriver.h"
 #include "SysTickDriver.h"
 #include "USARTxDriver.h"
+#include "AdcDriver.h"
+#include "RTCDriver.h"
 
 
 int main(void)

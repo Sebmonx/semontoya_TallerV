@@ -43,5 +43,6 @@ void systemClock_80MHz(PLL_Config_t *ptrPLL);
 void systemClock_100MHz(PLL_Config_t *ptrPLL);
 void systemClock_Output(GPIO_Handler_t *ptrC9);
 void systemClock_GetConfig(system_Clock_data *ptrClockData);
+uint8_t getPLL(void);
 
 #endif /* PLLDRIVER_H_ */
