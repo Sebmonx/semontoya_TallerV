@@ -27,19 +27,20 @@ void RTC_config(void){
 	/* Elegir señal de reloj para RTC */
 	RCC->BDCR |= RCC_BDCR_RTCSEL_0; // LSE
 
+	/* Encender periferico RTC */
+	RCC->BDCR |= RCC_BDCR_RTCEN;
 
 	/* Escritura de llaves para desbloquear RTC */
 	RTC->WPR = RTC_KEY1;
 	RTC->WPR = RTC_KEY2;
 
-//	/* Configuración hora */
-//	RTC_Time_Change(1, 1, 0);
-//
-//	/* Configuración fecha */
-//	RTC_Date_Change(2000, 2, 9, WEDNESDAY);
+	/* Configuración hora */
+	RTC_Time_Change(1, 1, 0);
 
-	/* Encender periferico RTC */
-	RCC->BDCR |= RCC_BDCR_RTCEN;
+	/* Configuración fecha */
+	RTC_Date_Change(2000, 2, 9, WEDNESDAY);
+
+
 
 	/* Apagar modificación de valores */
 	RTC->ISR &= ~RTC_ISR_INIT;
@@ -50,10 +51,10 @@ void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds){
 	/* Permitir modificación de valores en RTC */
 	RTC->ISR |= RTC_ISR_INIT;
 
-//	/* Esperar a estado de modificación */
-//	while(!(RTC->ISR & RTC_ISR_INITF)){
-//		__NOP();
-//	}
+	/* Esperar a estado de modificación */
+	while(!(RTC->ISR & RTC_ISR_INITF)){
+		__NOP();
+	}
 
 	/* Reset */
 	RTC->TR = 0;
@@ -80,10 +81,10 @@ void RTC_Date_Change(uint16_t year, uint8_t month, uint8_t date, uint8_t weekday
 	/* Permitir modificación de valores en RTC */
 	RTC->ISR |= RTC_ISR_INIT;
 
-//	/* Esperar a estado de modificación */
-//	while(!(RTC->ISR & RTC_ISR_INITF)){
-//		__NOP();
-//	}
+	/* Esperar a estado de modificación */
+	while(!(RTC->ISR & RTC_ISR_INITF)){
+		__NOP();
+	}
 
 	/* Reset */
 	RTC->DR = 0;
