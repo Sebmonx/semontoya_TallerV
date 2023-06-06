@@ -14,6 +14,8 @@
 
 #define HSI_CLOCK	0
 #define HSE_CLOCK	1
+#define LSE_CLOCK	2
+#define PLL_CLOCK 	3
 
 
 typedef struct
@@ -36,7 +38,7 @@ typedef struct
 
 
 void PLL_config(PLL_Config_t *ptrPLL);
-void PLL_Frequency_Output(GPIO_Handler_t *ptrA8);
+void PLL_Frequency_Output(GPIO_Handler_t *ptrA8, uint8_t clockSource, uint8_t preScaler);
 void PLL_ON_forSystem(PLL_Config_t *ptrPLL);
 void systemClock_16MHz(PLL_Config_t *ptrPLL);
 void systemClock_80MHz(PLL_Config_t *ptrPLL);

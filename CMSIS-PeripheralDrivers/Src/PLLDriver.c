@@ -102,7 +102,7 @@ void PLL_config(PLL_Config_t *ptrPLL){
 	ptrPLL->final_Frequency = actual_Frequency;
 }
 
-void PLL_Frequency_Output(GPIO_Handler_t *ptrA8){
+void PLL_Frequency_Output(GPIO_Handler_t *ptrA8, uint8_t clockSource, uint8_t preScaler){
 
 	/* Encendido GPIO A8 */
 	ptrA8->pGPIOx = GPIOA;
@@ -111,18 +111,33 @@ void PLL_Frequency_Output(GPIO_Handler_t *ptrA8){
 	ptrA8->GPIO_PinConfig.GPIO_PinAltFunMode = AF0;
 	GPIO_Config(ptrA8);
 
-	/* Configuración prescaler de MCO1 PLL/5 */
+	/* Configuración prescaler de MCO1 */
 	RCC->CFGR &= ~RCC_CFGR_MCO1PRE_Msk;
-	RCC->CFGR |= (0b111 << RCC_CFGR_MCO1PRE_Pos);
+	if(preScaler == 2){
+		RCC->CFGR |= 0b100 << RCC_CFGR_MCO1PRE_Pos;
+	}
+	else if(preScaler == 3){
+		RCC->CFGR |= 0b101 << RCC_CFGR_MCO1PRE_Pos;
+	}
+	else if(preScaler == 4){
+		RCC->CFGR |= 0b110 << RCC_CFGR_MCO1PRE_Pos;
+	}
+	else if(preScaler == 5){
+		RCC->CFGR |= 0b111 << RCC_CFGR_MCO1PRE_Pos;
+	}
 
 	/* Encendido señal para lectura MCO1 */
-	RCC->CFGR |= RCC_CFGR_MCO1;
-
-	// Endender señal de PLL
-	RCC->CR |= RCC_CR_PLLON;
-
-	while(!(RCC->CR & RCC_CR_PLLRDY)){
-		__NOP();
+	if(clockSource == HSI_CLOCK){
+		RCC->CFGR &= ~RCC_CFGR_MCO1;
+	}
+	else if(clockSource == LSE_CLOCK){
+		RCC->CFGR |= (0b01 << RCC_CFGR_MCO1_Pos);
+	}
+	else if(clockSource == HSE_CLOCK){
+		RCC->CFGR |= (0b10 << RCC_CFGR_MCO1_Pos);
+	}
+	else if(clockSource == PLL_CLOCK){
+		RCC->CFGR |= RCC_CFGR_MCO1;
 	}
 }
 

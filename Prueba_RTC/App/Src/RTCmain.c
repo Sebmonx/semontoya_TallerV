@@ -85,10 +85,7 @@ int main(void)
 
 
 
-void BasicTimer2_Callback(void){
-	GPIOxTooglePin(&blinkyLed);
-	GPIOxTooglePin(&blinkyLedH0);
-}
+
 
 void callback_USART2_RX(void){
 	data_recibida_USART = get_data_RX();
