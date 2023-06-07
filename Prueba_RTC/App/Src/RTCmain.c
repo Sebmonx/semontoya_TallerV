@@ -37,7 +37,7 @@ GPIO_Handler_t blinkyLed = {0};
 GPIO_Handler_t blinkyLedH0 = {0};
 
 // Handler RTC
-current_RTC_t RTC_Data = {0};
+RTC_Data_t RTC_Data = {0};
 
 // Variables transmisión USART
 GPIO_Handler_t PinTX2_handler = {0};
@@ -65,7 +65,8 @@ int main(void)
 	RTC_config();
 	inicializacion_Led_Estado();
 	inicializacion_USART2();
-	interruptWriteMsg(&USART_handler, buffer_datos);
+//	interruptWriteMsg(&USART_handler, buffer_datos);
+	writeMsg(&USART_handler, buffer_datos);
 
 
     /* Loop forever */
@@ -75,19 +76,33 @@ int main(void)
 				save_RTC_Data(&RTC_Data);
 				sprintf(buffer_datos,"%d : %d\n", RTC_Data.hour, RTC_Data.seconds);
 				interruptWriteMsg(&USART_handler, buffer_datos);
-				data_recibida_USART = '\0';
 			}
+
+			else if (data_recibida_USART == 'i') {
+//				save_RTC_Data(&RTC_Data);
+//				sprintf(buffer_datos, "%d : %d\n", RTC_Data.hour,
+//						RTC_Data.seconds);
+				writeMsg(&USART_handler, "Prueba de sonido!");
+			}
+			data_recibida_USART = '\0';
 		}
+
 	}
 
 	return 0;
 }
 
 
+void BasicTimer2_Callback(){
+	GPIOxTooglePin(&blinkyLed);
+}
 
 
+//void callback_USART2_RX(void){
+//	data_recibida_USART = get_data_RX();
+//}
 
-void callback_USART2_RX(void){
+void callback_USART6_RX(void){
 	data_recibida_USART = get_data_RX();
 }
 
@@ -127,27 +142,32 @@ void inicializacion_USART2(void){
 	// Para realizar transmisión por USB se utilizan los pines PA2 (TX) y PA3 (RX)
 	// Inicializacion de PIN A2 con funcion alternativa de USART2
 	PinTX2_handler.pGPIOx = GPIOA;
-	PinTX2_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_2;
+	//PinTX2_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_2;
+	PinTX2_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_11;
 	PinTX2_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
-	PinTX2_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF7;
+	//PinTX2_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF7;
+	PinTX2_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF8;
 	GPIO_Config(&PinTX2_handler);
 
 	// Inicialización de PIN A3 con función alternativa de USART2
 	PinRX2_handler.pGPIOx = GPIOA;
-	PinRX2_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_3;
+	//PinRX2_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_3;
+	PinRX2_handler.GPIO_PinConfig.GPIO_PinNumber = PIN_12;
 	PinRX2_handler.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
-	PinRX2_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF7;
+	//PinRX2_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF7;
+	PinRX2_handler.GPIO_PinConfig.GPIO_PinAltFunMode = AF8;
 	GPIO_Config(&PinRX2_handler);
 
 	// Inicialización de módulo serial USART2 transmisión + recepción e interrupción RX
-	USART_handler.ptrUSARTx = USART2;
+	//USART_handler.ptrUSARTx = USART2;
+	USART_handler.ptrUSARTx = USART6;
 	USART_handler.USART_Config.USART_mode = USART_MODE_RXTX;
 	USART_handler.USART_Config.USART_baudrate = USART_BAUDRATE_9600;
 	USART_handler.USART_Config.USART_datasize = USART_DATASIZE_8BIT;
 	USART_handler.USART_Config.USART_parity = USART_PARITY_NONE;
 	USART_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
 	USART_handler.USART_Config.USART_enableIntRX = ENABLE;
-	USART_handler.USART_Config.USART_enableIntTX = ENABLE;
+	USART_handler.USART_Config.USART_enableIntTX = DISABLE;
 	USART_handler.USART_Config.MCU_frequency = 16;
 	USART_Config(&USART_handler);
 }
