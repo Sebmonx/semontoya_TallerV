@@ -62,6 +62,7 @@ system_Clock_data clock_Data = {0};
 uint8_t MCO1_clock = 0;
 uint8_t MCO1_prescaler = 0;
 uint8_t frecuencia = 0;
+uint8_t calib_Reloj = 16;
 
 // Variables ADC
 ADC_Config_t ADC_h = {0};
@@ -80,6 +81,9 @@ unsigned int parametro_3 = 0;
 
 // Variables RTC
 RTC_Data_t RTC_Data = {0};
+uint8_t weekday = 0;
+
+
 
 int main(void)
 {
@@ -87,6 +91,7 @@ int main(void)
 	SCB->CPACR |= (0xF << 20);
 
 //	systemClock_100MHz(&PLL_h);
+	PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
 	RTC_config();
 	inicializacion_Led_Estado();
 	inicializacion_USART2();
@@ -162,18 +167,116 @@ void chequear_Comando(char *ptrBuffer){
 		elegir_PreScaler_MCO1();
 	}
 	else if(strcasecmp(cmd, "leerHora") == 0){
-		leer_Reloj_RTC();
+		leer_Hora_RTC();
 	}
 	else if(strcasecmp(cmd, "leerFecha") == 0){
 		leer_Fecha_RTC();
 	}
-
+	else if(strcasecmp(cmd, "cambiarFecha") == 0){
+		cambiar_Fecha_RTC();
+	}
+	else if(strcasecmp(cmd, "cambiarHora") == 0){
+		cambiar_Hora_RTC();
+	}
+	else if(strcasecmp(cmd, "calibrarReloj") == 0){
+		calibrar_HSITRIM();
+	}
 
 	else {
 		interruptWriteMsg(&USART_h, "Comando erróneo.");
 	}
 
 }
+
+void calibrar_HSITRIM(void){
+	data_recibida_USART = 'c';
+	interruptWriteMsg(&USART_h, "Ajuste de reloj\n");
+	interruptWriteMsg(&USART_h, "Para aumentar presione 'u'\n");
+	interruptWriteMsg(&USART_h, "Para disminuir presione 'd'\n");
+	interruptWriteMsg(&USART_h, "Para salir presione 's'");
+
+	while(data_recibida_USART == 'c'){
+
+		if(data_recibida_USART == 'u'){
+			data_recibida_USART = 'c';
+			calib_Reloj++;
+			if(calib_Reloj == 31){
+				interruptWriteMsg(&USART_h, "No puede incrementar más el ajuste.\n");
+				calib_Reloj = 31;
+			}
+			RCC->CR |= (calib_Reloj & 0x1F) << RCC_CR_HSITRIM_Pos;
+			sprintf(buffer_datos, "HSITRIM ajustado a %d\n", calib_Reloj);
+			interruptWriteMsg(&USART_h, buffer_datos);
+		}
+		else if(data_recibida_USART == 'd'){
+			data_recibida_USART = 'c';
+			calib_Reloj--;
+			if(calib_Reloj == 0){
+				interruptWriteMsg(&USART_h, "No puede disminuir más el ajuste.\n");
+				calib_Reloj = 0;
+			}
+			RCC->CR |= (calib_Reloj & 0x1F) << RCC_CR_HSITRIM_Pos;
+			sprintf(buffer_datos, "HSITRIM ajustado a %d\n", calib_Reloj);
+			interruptWriteMsg(&USART_h, buffer_datos);
+		}
+		data_recibida_USART = 'c';
+
+		if(data_recibida_USART == 's'){
+			break;
+		}
+	}
+}
+
+void cambiar_Hora_RTC(void){
+	if(strcasecmp(userMsg, "AM") == 0 || strcasecmp(userMsg, "PM") == 0){
+		if(parametro_1 > 12 || parametro_1 < 0){
+			interruptWriteMsg(&USART_h, "Por favor elegir una hora entre 0 y 12.");
+		}
+		else if(parametro_2 < 0 || parametro_2 > 60){
+			interruptWriteMsg(&USART_h, "Por favor elegir los minutos entre 0 y 60.");
+		}
+		else if(parametro_2 < 0 || parametro_2 > 60){
+			interruptWriteMsg(&USART_h, "Por favor elegir los segundos entre 0 y 60.");
+		}
+		else if(strcasecmp(userMsg, "AM") == 0){
+			RTC_Time_Change(parametro_1, parametro_2, parametro_3, AM);
+		}
+		else if(strcasecmp(userMsg, "PM") == 0){
+			RTC_Time_Change(parametro_1, parametro_2, parametro_3, PM);
+		}
+	}
+	else {
+		RTC_Time_Change(parametro_1, parametro_2, parametro_3, 3);
+	}
+	leer_Hora_RTC();
+}
+
+void cambiar_Fecha_RTC(void){
+	if(strcasecmp(userMsg, "lunes") == 0){
+		weekday = 1;
+	}
+	else if(strcasecmp(userMsg, "martes") == 0){
+		weekday = 2;
+	}
+	else if(strcasecmp(userMsg, "miercoles") == 0){
+		weekday = 3;
+	}
+	else if(strcasecmp(userMsg, "jueves") == 0){
+		weekday = 4;
+	}
+	else if(strcasecmp(userMsg, "viernes") == 0){
+		weekday = 5;
+	}
+	else if(strcasecmp(userMsg, "sabado") == 0){
+		weekday = 6;
+	}
+	else if(strcasecmp(userMsg, "domingo") == 0){
+		weekday = 7;
+	}
+	RTC_Date_Change(parametro_1, parametro_2, parametro_3, weekday);
+	leer_Fecha_RTC();
+}
+
 
 void leer_Fecha_RTC(void){
 	save_RTC_Data(&RTC_Data);
@@ -182,7 +285,7 @@ void leer_Fecha_RTC(void){
 	interruptWriteMsg(&USART_h, buffer_datos);
 }
 
-void leer_Reloj_RTC(void){
+void leer_Hora_RTC(void){
 	save_RTC_Data(&RTC_Data);
 	if(RTC->CR & RTC_CR_FMT){
 		if(RTC_Data.meridian == PM){
@@ -199,6 +302,8 @@ void leer_Reloj_RTC(void){
 		interruptWriteMsg(&USART_h, buffer_datos);
 	}
 }
+
+
 
 void elegir_PreScaler_MCO1(void){
 	if(parametro_1 == 2){

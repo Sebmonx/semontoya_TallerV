@@ -213,25 +213,25 @@ void save_RTC_Data(RTC_Data_t *ptrRTC_DAta){
 	auxVariable = BCDToBinary(auxVariable);
 	switch (auxVariable) {
 		case MONDAY:
-			strcpy(ptrRTC_DAta->weekday, "MONDAY");
+			strcpy(ptrRTC_DAta->weekday, "LUNES");
 			break;
 		case TUESDAY:
-			strcpy(ptrRTC_DAta->weekday, "TUESDAY");
+			strcpy(ptrRTC_DAta->weekday, "MARTES");
 			break;
 		case WEDNESDAY:
-			strcpy(ptrRTC_DAta->weekday, "WEDNESDAY");
+			strcpy(ptrRTC_DAta->weekday, "MIERCOLES");
 			break;
 		case THURSDAY:
-			strcpy(ptrRTC_DAta->weekday, "THURSDAY");
+			strcpy(ptrRTC_DAta->weekday, "JUEVES");
 			break;
 		case FRYDAY:
-			strcpy(ptrRTC_DAta->weekday, "FRYDAY");
+			strcpy(ptrRTC_DAta->weekday, "VIERNES");
 			break;
 		case SATURDAY:
-			strcpy(ptrRTC_DAta->weekday, "SATURDAY");
+			strcpy(ptrRTC_DAta->weekday, "SABADO");
 			break;
 		case SUNDAY:
-			strcpy(ptrRTC_DAta->weekday, "SUNDAY");
+			strcpy(ptrRTC_DAta->weekday, "DOMINGO");
 			break;
 		default:
 			break;

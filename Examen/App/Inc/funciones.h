@@ -38,8 +38,10 @@ void imprimir_help(void);
 void test_CMD(void);
 void elegir_Reloj_MCO1(void);
 void elegir_PreScaler_MCO1(void);
-void leer_Reloj_RTC(void);
+void leer_Hora_RTC(void);
 void leer_Fecha_RTC(void);
-
+void calibrar_HSITRIM(void);
+void cambiar_Fecha_RTC(void);
+void cambiar_Hora_RTC(void);
 
 #endif /* FUNCIONES_H_ */
