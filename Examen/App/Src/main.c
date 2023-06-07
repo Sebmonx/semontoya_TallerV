@@ -165,10 +165,7 @@ void chequear_Comando(char *ptrBuffer){
 		leer_Reloj_RTC();
 	}
 	else if(strcasecmp(cmd, "leerFecha") == 0){
-		save_RTC_Data(&RTC_Data);
-		sprintf(buffer_datos, "%d/%d/%d %s\n.",RTC_Data.date, RTC_Data.month,
-				RTC_Data.year, RTC_Data.weekday);
-		interruptWriteMsg(&USART_h, buffer_datos);
+
 	}
 
 
@@ -176,6 +173,13 @@ void chequear_Comando(char *ptrBuffer){
 		interruptWriteMsg(&USART_h, "Comando erróneo.");
 	}
 
+}
+
+void leer_Fecha_RTC(void){
+	save_RTC_Data(&RTC_Data);
+	sprintf(buffer_datos, "%d/%d/%d %s\n.",RTC_Data.date, RTC_Data.month,
+			RTC_Data.year, RTC_Data.weekday);
+	interruptWriteMsg(&USART_h, buffer_datos);
 }
 
 void leer_Reloj_RTC(void){

@@ -6,6 +6,7 @@
  */
 #include "RTCDriver.h"
 #include <string.h>
+#include <stdio.h>
 
 
 void RTC_config(void){
@@ -34,20 +35,16 @@ void RTC_config(void){
 	RTC->WPR = RTC_KEY1;
 	RTC->WPR = RTC_KEY2;
 
-
-
 	/* Configuración hora */
-	RTC_Time_Change(1, 1, 0, 3);
+	RTC_Time_Change(12, 45, 0, 3);
 
 	/* Configuración fecha */
 	RTC_Date_Change(9, 2, 00, WEDNESDAY);
-
-	RTC->CR &= RTC_CR_BYPSHAD;
 }
 
 void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds, uint8_t meridian){
 
-	/* Bit para desactivar los registros oscuros */
+	/* Desactivar los registros oscuros */
 	RTC->CR |= RTC_CR_BYPSHAD;
 
 	/* Permitir modificación de valores en RTC */
@@ -76,7 +73,6 @@ void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds, uint8_t mer
 		RTC->CR &= ~RTC_CR_FMT; // Notación 24 horas
 	}
 
-
 	/* Conversión a codificación BCD y escritura de hora */
 	uint8_t auxVariable = binaryToBCD(hour);
 	RTC->TR |= auxVariable << RTC_TR_HU_Pos;
@@ -89,9 +85,16 @@ void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds, uint8_t mer
 	auxVariable = binaryToBCD(seconds);
 	RTC->TR |= auxVariable << RTC_TR_SU;
 
-	RTC->ISR &= RTC_ISR_INIT;
+	/* Desactivar estado de inicialización */
+	RTC->ISR &= ~RTC_ISR_INIT;
 
-	RTC->CR &= RTC_CR_BYPSHAD;
+	/* Esperar desactivación de estado de inicialización */
+	while(RTC->ISR & RTC_ISR_INIT){
+		__NOP();
+	}
+
+	/* Encendido de registros oscuros */
+	RTC->CR &= ~RTC_CR_BYPSHAD;
 }
 
 void RTC_Date_Change(uint8_t date, uint8_t month, uint8_t year,  uint8_t weekday){
@@ -125,9 +128,13 @@ void RTC_Date_Change(uint8_t date, uint8_t month, uint8_t year,  uint8_t weekday
 	/* Escritura de día de la semana */
 	RTC->DR |= weekday;
 
-	RTC->ISR &= RTC_ISR_INIT;
+	RTC->ISR &= ~RTC_ISR_INIT;
 
-	RTC->CR &= RTC_CR_BYPSHAD;
+	while(RTC->ISR & RTC_ISR_INIT){
+		__NOP();
+	}
+
+	RTC->CR &= ~RTC_CR_BYPSHAD;
 }
 
 uint8_t binaryToBCD(uint8_t bin_Value){
@@ -206,7 +213,7 @@ void save_RTC_Data(RTC_Data_t *ptrRTC_DAta){
 	auxVariable = BCDToBinary(auxVariable);
 	switch (auxVariable) {
 		case MONDAY:
-			strcpy(ptrRTC_DAta->weekday, "MONDAY");
+			sprintf(ptrRTC_DAta->weekday, "MONDAY");
 			break;
 		case TUESDAY:
 			strcpy(ptrRTC_DAta->weekday, "TUESDAY");
