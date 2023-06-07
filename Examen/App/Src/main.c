@@ -165,7 +165,7 @@ void chequear_Comando(char *ptrBuffer){
 		leer_Reloj_RTC();
 	}
 	else if(strcasecmp(cmd, "leerFecha") == 0){
-
+		leer_Fecha_RTC();
 	}
 
 

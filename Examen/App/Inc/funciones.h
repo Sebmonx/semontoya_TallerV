@@ -1,3 +1,6 @@
+
+
+
 /*
  * funciones.h
  *
@@ -36,5 +39,7 @@ void test_CMD(void);
 void elegir_Reloj_MCO1(void);
 void elegir_PreScaler_MCO1(void);
 void leer_Reloj_RTC(void);
+void leer_Fecha_RTC(void);
+
 
 #endif /* FUNCIONES_H_ */

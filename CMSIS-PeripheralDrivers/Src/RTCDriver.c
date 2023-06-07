@@ -39,7 +39,7 @@ void RTC_config(void){
 	RTC_Time_Change(12, 45, 0, 3);
 
 	/* Configuración fecha */
-	RTC_Date_Change(9, 2, 00, WEDNESDAY);
+	RTC_Date_Change(9, 2, 00, MONDAY);
 }
 
 void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds, uint8_t meridian){
@@ -126,7 +126,7 @@ void RTC_Date_Change(uint8_t date, uint8_t month, uint8_t year,  uint8_t weekday
 	RTC->DR |= auxVariable << RTC_DR_DU_Pos;
 
 	/* Escritura de día de la semana */
-	RTC->DR |= weekday;
+	RTC->DR |= weekday << RTC_DR_WDU_Pos;
 
 	RTC->ISR &= ~RTC_ISR_INIT;
 
@@ -209,11 +209,11 @@ void save_RTC_Data(RTC_Data_t *ptrRTC_DAta){
 
 	/* Lectura registro día de semana y guardado */
 	// La máscara es para tomar los 3 bits asociados al día de la semana
-	auxVariable = (RTC->DR >> RTC_DR_WDU_Pos) & 0x3;
+	auxVariable = (RTC->DR >> RTC_DR_WDU_Pos) & 0x7;
 	auxVariable = BCDToBinary(auxVariable);
 	switch (auxVariable) {
 		case MONDAY:
-			sprintf(ptrRTC_DAta->weekday, "MONDAY");
+			strcpy(ptrRTC_DAta->weekday, "MONDAY");
 			break;
 		case TUESDAY:
 			strcpy(ptrRTC_DAta->weekday, "TUESDAY");
