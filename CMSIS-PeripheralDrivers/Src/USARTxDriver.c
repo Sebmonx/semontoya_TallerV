@@ -283,7 +283,7 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 	__disable_irq();
 
 	// Chequeo de activación de interrupción en recepción
-	if(ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_TX_ENABLE){
+	if(ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_RX_ENABLE){
 
 		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
 		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_RXNEIE;
@@ -291,10 +291,10 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_RXNEIE;
 	}
 
-	if(ptrUsartHandler->USART_Config.USART_enableIntRX == USART_INTERRUPT_TX_ENABLE){
+	if(ptrUsartHandler->USART_Config.USART_enableIntTX == USART_INTERRUPT_TX_ENABLE){
 
 		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_TXEIE;
-		ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
+		//ptrUsartHandler->ptrUSARTx->CR1 |= USART_CR1_TXEIE;
 	} else {
 		ptrUsartHandler->ptrUSARTx->CR1	&= ~USART_CR1_TXEIE;
 	}
@@ -379,7 +379,7 @@ void USART2_IRQHandler(void){
 void USART6_IRQHandler(void){
 	if(USART6->SR & USART_SR_RXNE){
 		auxiliar_data_RX = (uint8_t) USART6->DR;
-		callback_USART2_RX();
+		callback_USART6_RX();
 	}
 	else if(USART6->SR & USART_SR_TXE){
 		if(dataType == CHAR){
