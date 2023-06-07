@@ -26,13 +26,15 @@
 
 
 
-
-
-void chequear_Comando(char *ptrBuffer_Recepcion, USART_Handler_t *ptrUSART);
-void inicializacion_Led_Estado(BasicTimer_Handler_t *timerLed, GPIO_Handler_t *blinkyLed, GPIO_Handler_t *blinkyLedH1);
-void inicializacion_USART2(GPIO_Handler_t *pinTX2, GPIO_Handler_t *pinRX2, USART_Handler_t *usart2);
-void inicializacion_USART6(GPIO_Handler_t *pinTX6, GPIO_Handler_t *pinRX6, USART_Handler_t *usart6);
-
-
+void inicializacion_Led_Estado(void);
+void inicializacion_ADC(void);
+void inicializacion_USART2(void);
+void inicializacion_USART6(void);
+void chequear_Comando(char *ptrBuffer);
+void imprimir_help(void);
+void test_CMD(void);
+void elegir_Reloj_MCO1(void);
+void elegir_PreScaler_MCO1(void);
+void leer_Reloj_RTC(void);
 
 #endif /* FUNCIONES_H_ */

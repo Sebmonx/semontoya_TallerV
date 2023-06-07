@@ -169,6 +169,20 @@ void USART_Config(USART_Handler_t *ptrUsartHandler){
 			break;
 		}
 
+//		case 50:{
+//			// Frec = 40MHz, overr = 0;
+//			if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_9600){
+//				ptrUsartHandler->ptrUSARTx->BRR = 0x1047;
+//			}
+//			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_19200){
+//				ptrUsartHandler->ptrUSARTx->BRR = 0x0823;
+//			}
+//			else if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_115200){
+//				ptrUsartHandler->ptrUSARTx->BRR = 0x15B;
+//			}
+//			break;
+//		}
+
 		case 80:{
 			// Frec = 80MHz, overr = 0;
 			if(ptrUsartHandler->USART_Config.USART_baudrate == USART_BAUDRATE_9600){

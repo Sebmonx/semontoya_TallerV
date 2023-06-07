@@ -112,7 +112,7 @@ void PLL_Frequency_Output(GPIO_Handler_t *ptrA8, uint8_t clockSource, uint8_t pr
 	GPIO_Config(ptrA8);
 
 	/* Configuración prescaler de MCO1 */
-	RCC->CFGR &= ~RCC_CFGR_MCO1PRE_Msk;
+	RCC->CFGR &= ~RCC_CFGR_MCO1PRE;
 	if(preScaler == 2){
 		RCC->CFGR |= 0b100 << RCC_CFGR_MCO1PRE_Pos;
 	}
@@ -124,6 +124,9 @@ void PLL_Frequency_Output(GPIO_Handler_t *ptrA8, uint8_t clockSource, uint8_t pr
 	}
 	else if(preScaler == 5){
 		RCC->CFGR |= 0b111 << RCC_CFGR_MCO1PRE_Pos;
+	}
+	else {
+		RCC->CFGR &= ~RCC_CFGR_MCO1PRE;
 	}
 
 	/* Encendido señal para lectura MCO1 */
@@ -138,6 +141,8 @@ void PLL_Frequency_Output(GPIO_Handler_t *ptrA8, uint8_t clockSource, uint8_t pr
 	}
 	else if(clockSource == PLL_CLOCK){
 		RCC->CFGR |= RCC_CFGR_MCO1;
+	} else {
+		RCC->CFGR &= ~RCC_CFGR_MCO1;
 	}
 }
 

@@ -102,27 +102,10 @@ void chequear_Comando(char *ptrBuffer_Recepcion){
 	sscanf(ptrBuffer_Recepcion,"%s %u %u %s", cmd, &parametro_1, &parametro_2, userMsg);
 
 	if(strcmp(cmd, "help") == 0){
-		interruptWriteMsg(&USART_handler, "Menú de comandos\n");
-		interruptWriteMsg(&USART_handler, "1) help - Imprimir este menú\n");
-		interruptWriteMsg(&USART_handler, "2) - Control 1 de MCO1 cambiar señal - Elige entre HSI, LSE o PLL\n");
-		interruptWriteMsg(&USART_handler, "3) - Control 2 de MCO2 cambiar preescaler - Elige entre \n");
-		interruptWriteMsg(&USART_handler, "4) - RTC 1\n");
-		interruptWriteMsg(&USART_handler, "5) - RTC 2\n");
-		interruptWriteMsg(&USART_handler, "6) - RTC 3\n");
-		interruptWriteMsg(&USART_handler, "7) - RTC 4\n");
-		interruptWriteMsg(&USART_handler, "8) - ADC 1\n");
-		interruptWriteMsg(&USART_handler, "9) - ADC 2\n");
-		interruptWriteMsg(&USART_handler, "10) - Acel 1\n");
-		interruptWriteMsg(&USART_handler, "11) - Acel 2\n");
+		imprimir
 	}
 	else if(strcmp(cmd, "test") == 0){
-		interruptWriteMsg(&USART_handler, "Test CMD\n");
 
-		sprintf(buffer_datos, "numero 1 = %u", parametro_1);
-		interruptWriteMsg(&USART_handler, buffer_datos);
-
-		sprintf(buffer_datos, "numero 2 = %u", parametro_2);
-		interruptWriteMsg(&USART_handler, buffer_datos);
 	}
 	else {
 		interruptWriteMsg(&USART_handler, "Comando erróneo.");
@@ -147,6 +130,32 @@ void adcComplete_Callback(void){
 		ADC_Contador = 0;
 		ADC_Completo = 1;
 	}
+}
+
+
+void test_cmd(uint8_t parametro1, uint8_t parametro2, USART_Handler_t *ptrUSART){
+	interruptWriteMsg(&USART_handler, "Test CMD\n");
+
+	sprintf(buffer_datos, "numero 1 = %u", parametro1);
+	interruptWriteMsg(&USART_handler, buffer_datos);
+
+	sprintf(buffer_datos, "numero 2 = %u", parametro2);
+	interruptWriteMsg(&USART_handler, buffer_datos);
+}
+
+void imprimir_help(USART_Handler_t *ptrUSART){
+	interruptWriteMsg(&USART_handler, "Menú de comandos\n");
+	interruptWriteMsg(&USART_handler, "1) help - Imprimir este menú\n");
+	interruptWriteMsg(&USART_handler, "2) - Control 1 de MCO1 cambiar señal - Elige entre HSI, LSE o PLL\n");
+	interruptWriteMsg(&USART_handler, "3) - Control 2 de MCO2 cambiar preescaler - Elige entre \n");
+	interruptWriteMsg(&USART_handler, "4) - RTC 1\n");
+	interruptWriteMsg(&USART_handler, "5) - RTC 2\n");
+	interruptWriteMsg(&USART_handler, "6) - RTC 3\n");
+	interruptWriteMsg(&USART_handler, "7) - RTC 4\n");
+	interruptWriteMsg(&USART_handler, "8) - ADC 1\n");
+	interruptWriteMsg(&USART_handler, "9) - ADC 2\n");
+	interruptWriteMsg(&USART_handler, "10) - Acel 1\n");
+	interruptWriteMsg(&USART_handler, "11) - Acel 2\n");
 }
 
 void inicializacion_ADC_CH0(void){
