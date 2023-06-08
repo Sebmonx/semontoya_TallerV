@@ -159,32 +159,6 @@ void RTC_Date_Change(uint8_t date, uint8_t month, uint8_t year,  uint8_t weekday
 	RTC->CR &= ~RTC_CR_BYPSHAD;
 }
 
-uint8_t binaryToBCD(uint8_t bin_Value){
-	uint8_t m = 0, n = 0;
-	uint8_t bcd_Value = bin_Value;
-
-	if(bin_Value >= 10){
-		m = bin_Value / 10;
-		n = bin_Value % 10;
-
-		bcd_Value = (m << 4) | n;
- 	}
-
-	return bcd_Value;
-}
-
-uint16_t BCDToBinary(uint8_t BCD_value){
-	uint8_t m = 0; uint8_t n = 0;
-	uint16_t bin_Value = 0;
-
-	m = (BCD_value >> 4) * 10;
-	n = BCD_value & 0x0F;
-
-	bin_Value = m + n;
-
-	return bin_Value;
-}
-
 void save_RTC_Data(RTC_Data_t *ptrRTC_DAta){
 	uint16_t auxVariable = 0;
 	uint8_t decenas = 0;

@@ -71,6 +71,9 @@ uint8_t ADC_Contador = 0;
 uint8_t numero_De_Canales = 2;
 uint8_t ADC_Completo = 0;
 
+GPIO_Handler_t pinPWM_h = {0};
+PWM_Handler_t PWM_h = {0};
+
 // Variables comandos
 char cmd[64] = {0};
 char userMsg[256] = {0};
@@ -197,7 +200,7 @@ void calibrar_HSITRIM(void){
 	interruptWriteMsg(&USART_h, "Para disminuir presione 'd'\n");
 	interruptWriteMsg(&USART_h, "Para salir presione 's'\n");
 
-	while(data_recibida_USART == 'c'){
+	while(strcasecmp(cmd, "calibrarReloj") == 0){
 
 		if(data_recibida_USART == 'u'){
 			data_recibida_USART = 'c';
@@ -206,6 +209,7 @@ void calibrar_HSITRIM(void){
 				interruptWriteMsg(&USART_h, "No puede incrementar más el ajuste.\n");
 				calib_Reloj = 31;
 			}
+
 			RCC->CR |= (calib_Reloj & 0x1F) << RCC_CR_HSITRIM_Pos;
 			sprintf(buffer_datos, "HSITRIM ajustado a %d\n", calib_Reloj);
 			interruptWriteMsg(&USART_h, buffer_datos);
@@ -217,11 +221,11 @@ void calibrar_HSITRIM(void){
 				interruptWriteMsg(&USART_h, "No puede disminuir más el ajuste.\n");
 				calib_Reloj = 0;
 			}
+
 			RCC->CR |= (calib_Reloj & 0x1F) << RCC_CR_HSITRIM_Pos;
 			sprintf(buffer_datos, "HSITRIM ajustado a %d\n", calib_Reloj);
 			interruptWriteMsg(&USART_h, buffer_datos);
 		}
-		data_recibida_USART = 'c';
 
 		if(data_recibida_USART == 's'){
 			break;
@@ -275,10 +279,20 @@ void cambiar_Fecha_RTC(void){
 	else if(strcasecmp(userMsg, "domingo") == 0){
 		weekday = 7;
 	}
+
+	if(parametro_1 < 0 && parametro_2 < 0 && parametro_3 < 0){
+		interruptWriteMsg(&USART_h, "No se admiten negativos.\n");
+	}
+	else if(parametro_1 > 31){
+
+	}
+	if(parametro_2 == 2 && parametro_1 < 28 && parametro_1 > 0){
+
+	}
+
 	RTC_Date_Change(parametro_1, parametro_2, parametro_3, weekday);
 	leer_Fecha_RTC();
 }
-
 
 void leer_Fecha_RTC(void){
 	save_RTC_Data(&RTC_Data);
@@ -289,47 +303,40 @@ void leer_Fecha_RTC(void){
 
 void leer_Hora_RTC(void){
 	save_RTC_Data(&RTC_Data);
-	if(RTC->CR & RTC_CR_FMT){
-		if(RTC_Data.meridian == PM){
-			sprintf(buffer_datos, "%d:%d:%d PM\n.",RTC_Data.hour, RTC_Data.minutes, RTC_Data.seconds);
-			interruptWriteMsg(&USART_h, buffer_datos);
-		}
-		else if(RTC_Data.meridian == AM){
-			sprintf(buffer_datos, "%d:%d:%d AM\n.",RTC_Data.hour, RTC_Data.minutes, RTC_Data.seconds);
-			interruptWriteMsg(&USART_h, buffer_datos);
-		}
-	}
-	else {
-		sprintf(buffer_datos, "%d:%d:%d H\n.",RTC_Data.hour, RTC_Data.minutes, RTC_Data.seconds);
-		interruptWriteMsg(&USART_h, buffer_datos);
-	}
+	sprintf(buffer_datos, "%d:%d:%d H\n.",RTC_Data.hour, RTC_Data.minutes, RTC_Data.seconds);
+	interruptWriteMsg(&USART_h, buffer_datos);
+
 }
 
-
-
 void elegir_PreScaler_MCO1(void){
-	if(parametro_1 == 2){
-		MCO1_prescaler = 2;
-		PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
-		interruptWriteMsg(&USART_h, "Prescaler 2 seleccionado para MCO1.\n");
-	}
-	else if(parametro_1 == 3){
-		MCO1_prescaler = 3;
-		PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
-		interruptWriteMsg(&USART_h, "Prescaler 3 seleccionado para MCO1.\n");
-	}
-	else if(parametro_1 == 4){
-		MCO1_prescaler = 4;
-		PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
-		interruptWriteMsg(&USART_h, "Prescaler 4 seleccionado para MCO1.\n");
-	}
-	else if(parametro_1 == 5){
-		MCO1_prescaler = 5;
-		PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
-		interruptWriteMsg(&USART_h, "Prescaler 5 seleccionado para MCO1.\n");
-	}
-	else {
-		interruptWriteMsg(&USART_h, "Intenta seleccionando el prescaler con un entero entre 2 y 5.\n");
+	switch (parametro_1) {
+		case 2:
+			MCO1_prescaler = 2;
+			PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
+			interruptWriteMsg(&USART_h, "Prescaler 2 seleccionado para MCO1.\n");
+			break;
+
+		case 3:
+			MCO1_prescaler = 3;
+			PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
+			interruptWriteMsg(&USART_h, "Prescaler 3 seleccionado para MCO1.\n");
+			break;
+
+		case 4:
+			MCO1_prescaler = 4;
+			PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
+			interruptWriteMsg(&USART_h, "Prescaler 4 seleccionado para MCO1.\n");
+			break;
+
+		case 5:
+			MCO1_prescaler = 5;
+			PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
+			interruptWriteMsg(&USART_h, "Prescaler 5 seleccionado para MCO1.\n");
+			break;
+
+		default:
+			interruptWriteMsg(&USART_h, "Intenta seleccionando el prescaler con un entero entre 2 y 5.\n");
+			break;
 	}
 }
 
@@ -472,6 +479,7 @@ void inicializacion_USART6(void){
 	USART_Config(&USART_h);
 }
 
+/* Pin A0 y A1 */
 void inicializacion_ADC(void){
 	ADC_h.channel[0] = ADC_CHANNEL_0;
 	ADC_h.channel[1] = ADC_CHANNEL_1;
@@ -483,3 +491,22 @@ void inicializacion_ADC(void){
 
 }
 
+/* Pin B4 */
+void inicializacion_Trigger_ADC(void){
+	pinPWM_h.pGPIOx = GPIOB;
+	pinPWM_h.GPIO_PinConfig.GPIO_PinNumber = PIN_4;
+	pinPWM_h.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
+	pinPWM_h.GPIO_PinConfig.GPIO_PinOType = GPIO_OTYPE_PUSHPULL;
+	pinPWM_h.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
+	pinPWM_h.GPIO_PinConfig.GPIO_PinSpeed = GPIO_OSPEED_FAST;
+	pinPWM_h.GPIO_PinConfig.GPIO_PinAltFunMode = AF2;
+	GPIO_Config(&pinPWM_h);
+
+	PWM_h.ptrTIMx = TIM3;
+	PWM_h.config.channel = PWM_CHANNEL_1;
+	PWM_h.config.prescaler = 1000;
+	PWM_h.config.periodo = 2000;
+	PWM_h.config.duttyCicle = 1000;
+	pwm_Config(&PWM_h);
+	startPwmSignal(&PWM_h);
+}

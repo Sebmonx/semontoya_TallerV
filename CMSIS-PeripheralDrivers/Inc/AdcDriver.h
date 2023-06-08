@@ -48,6 +48,7 @@
 #define MILIVOLTS 	0
 #define MICROVOLTS	1
 
+
 typedef struct
 {
 	uint8_t		channel[16];		// Canal ADC que será utilizado para la conversión ADC
@@ -58,13 +59,14 @@ typedef struct
 	uint16_t	adcData;			//Dato de la conversión
 }ADC_Config_t;
 
-void adc_Config(ADC_Config_t *adcConfig);
+
 void adc_Config_MultiCH(ADC_Config_t *adcConfig, uint8_t numberOfCH);
 void configAnalogPin(uint8_t adcChannel);
 void adcComplete_Callback(void);
 void startSingleADC(void);
 void startContinousADC(void);
 uint16_t getADC(void);
+float get_Voltage(ADC_Config_t *adcConfig);
 
 //void ADC_ConfigMultichannel (ADC_Config_t *adcConfig, uint8_t numeroDeCanales);
 
