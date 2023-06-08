@@ -62,11 +62,13 @@ system_Clock_data clock_Data = {0};
 uint8_t MCO1_clock = 0;
 uint8_t MCO1_prescaler = 0;
 uint8_t frecuencia = 0;
-uint8_t calib_Reloj = 16;
+uint8_t calib_Reloj = 12;
 
 // Variables ADC
 ADC_Config_t ADC_h = {0};
 uint16_t ADC_Data[2] = {0};
+uint16_t ADC_Data_CH0[256] = {0};
+uint8_t ADC_Data_CH1[256] = {0};
 uint8_t ADC_Contador = 0;
 uint8_t numero_De_Canales = 2;
 uint8_t ADC_Completo = 0;
@@ -92,6 +94,7 @@ int main(void)
 {
 	/* Activador coprocesador matemático - FPU */
 	SCB->CPACR |= (0xF << 20);
+
 
 	systemClock_100MHz(&PLL_h);
 	PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
@@ -191,7 +194,9 @@ void chequear_Comando(char *ptrBuffer){
 	else if(strcasecmp(cmd, "calibrarReloj") == 0){
 		calibrar_HSITRIM();
 	}
+	else if(strcasecmp(cmd, "iniciarADC")){
 
+	}
 	else {
 		interruptWriteMsg(&USART_h, "Comando erróneo.\n");
 	}
@@ -214,7 +219,7 @@ void calibrar_HSITRIM(void){
 				interruptWriteMsg(&USART_h, "No puede incrementar más el ajuste.\n");
 				calib_Reloj = 31;
 			}
-
+			RCC->CR &= ~RCC_CR_HSITRIM;
 			RCC->CR |= (calib_Reloj & 0x1F) << RCC_CR_HSITRIM_Pos;
 			sprintf(buffer_datos, "HSITRIM ajustado a %d\n", calib_Reloj);
 			interruptWriteMsg(&USART_h, buffer_datos);
@@ -226,7 +231,7 @@ void calibrar_HSITRIM(void){
 				interruptWriteMsg(&USART_h, "No puede disminuir más el ajuste.\n");
 				calib_Reloj = 0;
 			}
-
+			RCC->CR &= ~RCC_CR_HSITRIM;
 			RCC->CR |= (calib_Reloj & 0x1F) << RCC_CR_HSITRIM_Pos;
 			sprintf(buffer_datos, "HSITRIM ajustado a %d\n", calib_Reloj);
 			interruptWriteMsg(&USART_h, buffer_datos);
@@ -392,6 +397,9 @@ void inicializacion_Led_Estado(void){
 	blinkyLedH1.GPIO_PinConfig.GPIO_PinOType = GPIO_OTYPE_PUSHPULL;
 	blinkyLedH1.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
 	GPIO_Config(&blinkyLedH1);
+
+	RCC->CR &= ~RCC_CR_HSITRIM;
+	RCC->CR |= (calib_Reloj & 0x1F) << RCC_CR_HSITRIM_Pos;
 }
 
 /* Pin A2 y A3 */
