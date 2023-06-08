@@ -8,6 +8,7 @@
  *      Author: Sebastian Montoya
  */
 
+
 #ifndef FUNCIONES_H_
 #define FUNCIONES_H_
 
@@ -43,5 +44,8 @@ void leer_Fecha_RTC(void);
 void calibrar_HSITRIM(void);
 void cambiar_Fecha_RTC(void);
 void cambiar_Hora_RTC(void);
+void inicializacion_Trigger_ADC(void);
+
+
 
 #endif /* FUNCIONES_H_ */

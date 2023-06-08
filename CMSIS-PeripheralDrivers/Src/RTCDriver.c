@@ -35,14 +35,19 @@ void RTC_config(void){
 	RTC->WPR = RTC_KEY1;
 	RTC->WPR = RTC_KEY2;
 
+	/* Espera que los registros oscuros se sincronicen */
+	while(!(RTC->ISR & RTC_ISR_RSF)){
+		__NOP() ;
+	}
+
 	/* Configuración hora */
-	RTC_Time_Change(12, 45, 0, 3);
+	RTC_Time_Change(12, 45, 0);
 
 	/* Configuración fecha */
 	RTC_Date_Change(9, 2, 00, MONDAY);
 }
 
-void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds, uint8_t meridian){
+void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds){
 
 	/* Desactivar los registros oscuros */
 	RTC->CR |= RTC_CR_BYPSHAD;
@@ -61,41 +66,33 @@ void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds, uint8_t mer
 	/* Reset */
 	RTC->TR = 0;
 
-//	/* Inicio de configuraciones para reloj */
-//	if(meridian == AM || meridian == PM){
-//		RTC->CR |= RTC_CR_FMT; // Notación AM/PM
-//		if(meridian == AM){
-//			/* Horas de la mañana */
-//			RTC->TR &= ~RTC_TR_PM;
-//		} else {
-//			/* Horas de la tarde */
-//			RTC->TR |= RTC_TR_PM;
-//		}
-//	}
-//	else {
-//		RTC->CR &= ~RTC_CR_FMT; // Notación 24 horas
-//	}
+	uint8_t decenas = 0;
+	uint8_t unidades = 0;
 
-	/* Conversión a codificación BCD y escritura de hora */
-	uint8_t decenas = hour/10;
-	RTC->TR |= (decenas & 0x3) << RTC_TR_HT_Pos;
+	/* Chequeo números ingresados */
+	if(hour < 24 && minutes < 60 && seconds < 60){
+		/* Codificación BCD y escritura de hora */
+		decenas = hour/10;
+		RTC->TR |= (decenas & 0x3) << RTC_TR_HT_Pos;
 
-	uint8_t unidades = hour%10;
-	RTC->TR |= (unidades & 0xF) << RTC_TR_HU_Pos;
+		unidades = hour%10;
+		RTC->TR |= (unidades & 0xF) << RTC_TR_HU_Pos;
 
-	/* Conversión a codificación BCD y escritura de minutos */
-	decenas = minutes/10;
-	RTC->TR |= (decenas & 0x7) << RTC_TR_MNT_Pos;
+		/* Codificación BCD y escritura de minutos */
+		decenas = minutes/10;
+		RTC->TR |= (decenas & 0x7) << RTC_TR_MNT_Pos;
 
-	unidades = minutes%10;
-	RTC->TR |= (unidades & 0xF) << RTC_TR_MNU_Pos;
+		unidades = minutes%10;
+		RTC->TR |= (unidades & 0xF) << RTC_TR_MNU_Pos;
 
-	/* Conversión a codificación BCD y escritura de segundos */
-	decenas = seconds/10;
-	RTC->TR |= (decenas & 0x7) << RTC_TR_ST_Pos;
+		/* Codificación BCD y escritura de segundos */
+		decenas = seconds/10;
+		RTC->TR |= (decenas & 0x7) << RTC_TR_ST_Pos;
 
-	unidades = seconds%10;
-	RTC->TR |= (unidades & 0xF) << RTC_TR_SU_Pos;
+		unidades = seconds%10;
+		RTC->TR |= (unidades & 0xF) << RTC_TR_SU_Pos;
+	}
+
 
 	/* Desactivar estado de inicialización */
 	RTC->ISR &= ~RTC_ISR_INIT;
@@ -125,26 +122,31 @@ void RTC_Date_Change(uint8_t date, uint8_t month, uint8_t year,  uint8_t weekday
 	/* Reset */
 	RTC->DR = 0;
 
-	/* Conversión a codificación BCD y escritura de año */
-	uint8_t decenas = year/10;
-	RTC->DR |= (decenas & 0xF) << RTC_DR_YT_Pos;
 
-	uint8_t unidades = year%10;
-	RTC->DR |= (unidades & 0xF) << RTC_DR_YU_Pos;
+	/* Chequeo números ingresados */
+	if(month < 13 && date < 32){
 
-	/* Conversión a codificación BCD y escritura de mes */
-	decenas = year/10;
-	RTC->DR |= (decenas & 0x1) << RTC_DR_MT_Pos;
+		/* Conversión a codificación BCD y escritura de año */
+		uint8_t decenas = year/10;
+		RTC->DR |= (decenas & 0xF) << RTC_DR_YT_Pos;
 
-	unidades = year%10;
-	RTC->DR |= (unidades & 0xF) << RTC_DR_MU_Pos;
+		uint8_t unidades = year%10;
+		RTC->DR |= (unidades & 0xF) << RTC_DR_YU_Pos;
 
-	/* Conversión a codificación BCD y escritura de fecha */
-	decenas = date/10;
-	RTC->DR |= (decenas & 0xF) << RTC_DR_DT_Pos;
+		/* Conversión a codificación BCD y escritura de mes */
+		decenas = year/10;
+		RTC->DR |= (decenas & 0x1) << RTC_DR_MT_Pos;
 
-	unidades = date%10;
-	RTC->DR |= (unidades & 0xF) << RTC_DR_DU_Pos;
+		unidades = year%10;
+		RTC->DR |= (unidades & 0xF) << RTC_DR_MU_Pos;
+
+		/* Conversión a codificación BCD y escritura de fecha */
+		decenas = date/10;
+		RTC->DR |= (decenas & 0xF) << RTC_DR_DT_Pos;
+
+		unidades = date%10;
+		RTC->DR |= (unidades & 0xF) << RTC_DR_DU_Pos;
+	}
 
 
 	/* Escritura de día de la semana */

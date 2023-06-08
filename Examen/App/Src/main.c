@@ -93,11 +93,13 @@ int main(void)
 	/* Activador coprocesador matemático - FPU */
 	SCB->CPACR |= (0xF << 20);
 
-//	systemClock_100MHz(&PLL_h);
+	systemClock_100MHz(&PLL_h);
 	PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
 	RTC_config();
 	inicializacion_Led_Estado();
 	inicializacion_USART2();
+	inicializacion_USART6();
+	inicializacion_Trigger_ADC();
 	interruptWriteMsg(&USART_h, buffer_datos);
 
     /* Loop forever */
@@ -138,10 +140,13 @@ void BasicTimer2_Callback(void){
 
 }
 
-void callback_USART2_RX(void){
+//void callback_USART2_RX(void){
+//	data_recibida_USART = get_data_RX();
+//}cambio
+
+void callback_USART6_RX(void){
 	data_recibida_USART = get_data_RX();
 }
-
 
 void adcComplete_Callback(void){
 	ADC_Data[ADC_Contador] = getADC();
@@ -234,30 +239,12 @@ void calibrar_HSITRIM(void){
 }
 
 void cambiar_Hora_RTC(void){
-	if(strcasecmp(userMsg, "AM") == 0 || strcasecmp(userMsg, "PM") == 0){
-		if(parametro_1 > 12 || parametro_1 < 0){
-			interruptWriteMsg(&USART_h, "Por favor elegir una hora entre 0 y 12.");
-		}
-		else if(parametro_2 < 0 || parametro_2 > 60){
-			interruptWriteMsg(&USART_h, "Por favor elegir los minutos entre 0 y 60.");
-		}
-		else if(parametro_2 < 0 || parametro_2 > 60){
-			interruptWriteMsg(&USART_h, "Por favor elegir los segundos entre 0 y 60.");
-		}
-		else if(strcasecmp(userMsg, "AM") == 0){
-			RTC_Time_Change(parametro_1, parametro_2, parametro_3, AM);
-		}
-		else if(strcasecmp(userMsg, "PM") == 0){
-			RTC_Time_Change(parametro_1, parametro_2, parametro_3, PM);
-		}
-	}
-	else {
-		RTC_Time_Change(parametro_1, parametro_2, parametro_3, 3);
-	}
+	RTC_Time_Change(parametro_1, parametro_2, parametro_3);
 	leer_Hora_RTC();
 }
 
 void cambiar_Fecha_RTC(void){
+
 	if(strcasecmp(userMsg, "lunes") == 0){
 		weekday = 1;
 	}
@@ -278,16 +265,6 @@ void cambiar_Fecha_RTC(void){
 	}
 	else if(strcasecmp(userMsg, "domingo") == 0){
 		weekday = 7;
-	}
-
-	if(parametro_1 < 0 && parametro_2 < 0 && parametro_3 < 0){
-		interruptWriteMsg(&USART_h, "No se admiten negativos.\n");
-	}
-	else if(parametro_1 > 31){
-
-	}
-	if(parametro_2 == 2 && parametro_1 < 28 && parametro_1 > 0){
-
 	}
 
 	RTC_Date_Change(parametro_1, parametro_2, parametro_3, weekday);
@@ -394,9 +371,9 @@ void inicializacion_Led_Estado(void){
 	// Timer para LEDs de estado usando el LED2 y pin H0
 	timerLed.ptrTIMx = TIM2;
 	timerLed.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
-	timerLed.TIMx_Config.TIMx_speed = BITMER_SPEED_16Mhz_100us;
-	timerLed.TIMx_Config.TIMx_period = 2500; 			// Tiempo en milisegundos
-	timerLed.TIMx_Config.TIMx_interruptEnable = ENABLE; // Activar interrupción
+	timerLed.TIMx_Config.TIMx_speed = BTIMER_SPEED_100Mhz_100us;
+	timerLed.TIMx_Config.TIMx_period = 25000; // Tiempo en milisegundos
+	timerLed.TIMx_Config.TIMx_interruptEnable = ENABLE;
 	BasicTimer_Config(&timerLed);
 
 	// Controlador de LED2 asignado como led de estado
@@ -439,13 +416,13 @@ void inicializacion_USART2(void){
 	// Inicialización de módulo serial USART2 transmisión + recepción e interrupción RX
 	USART_h.ptrUSARTx = USART2;
 	USART_h.USART_Config.USART_mode = USART_MODE_RXTX;
-	USART_h.USART_Config.USART_baudrate = USART_BAUDRATE_9600;
+	USART_h.USART_Config.USART_baudrate = USART_BAUDRATE_115200;
 	USART_h.USART_Config.USART_datasize = USART_DATASIZE_8BIT;
 	USART_h.USART_Config.USART_parity = USART_PARITY_NONE;
 	USART_h.USART_Config.USART_stopbits = USART_STOPBIT_1;
 	USART_h.USART_Config.USART_enableIntRX = ENABLE;
 	USART_h.USART_Config.USART_enableIntTX = ENABLE;
-	USART_h.USART_Config.MCU_frequency = 16;
+	USART_h.USART_Config.MCU_frequency = frecuencia;
 	USART_Config(&USART_h);
 }
 
@@ -469,13 +446,13 @@ void inicializacion_USART6(void){
 	// Inicialización de módulo serial USART2 transmisión + recepción e interrupción RX
 	USART_h.ptrUSARTx = USART6;
 	USART_h.USART_Config.USART_mode = USART_MODE_RXTX;
-	USART_h.USART_Config.USART_baudrate = USART_BAUDRATE_9600;
+	USART_h.USART_Config.USART_baudrate = USART_BAUDRATE_115200;
 	USART_h.USART_Config.USART_datasize = USART_DATASIZE_8BIT;
 	USART_h.USART_Config.USART_parity = USART_PARITY_NONE;
 	USART_h.USART_Config.USART_stopbits = USART_STOPBIT_1;
 	USART_h.USART_Config.USART_enableIntRX = ENABLE;
 	USART_h.USART_Config.USART_enableIntTX = ENABLE;
-	USART_h.USART_Config.MCU_frequency = 16;
+	USART_h.USART_Config.MCU_frequency = 100;
 	USART_Config(&USART_h);
 }
 
@@ -504,9 +481,9 @@ void inicializacion_Trigger_ADC(void){
 
 	PWM_h.ptrTIMx = TIM3;
 	PWM_h.config.channel = PWM_CHANNEL_1;
-	PWM_h.config.prescaler = 1000;
-	PWM_h.config.periodo = 2000;
-	PWM_h.config.duttyCicle = 1000;
+	PWM_h.config.prescaler = PWM_PRESCALER_100MHz_1us;
+	PWM_h.config.periodo = 66;
+	PWM_h.config.duttyCicle = 33;
 	pwm_Config(&PWM_h);
 	startPwmSignal(&PWM_h);
 }

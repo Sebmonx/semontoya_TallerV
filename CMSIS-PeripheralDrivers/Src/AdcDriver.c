@@ -7,12 +7,20 @@
 #include "AdcDriver.h"
 #include "GPIOxDriver.h"
 #include "PLLDriver.h"
+#include "PwmDriver.h"
+
 
 GPIO_Handler_t handlerAdcPin = {0};
 uint16_t adcRawData = 0;
 
 void adc_ExternalTrig(PWM_Handler_t *ptrTimer, GPIO_Handler_t *ptrB4){
 
+	/* Activación por medio externo de ADC */
+	ADC1->CR2 |= ADC_CR2_EXTEN;
+
+	/* Selección timer y canal para utilizar en ADC */
+	// Queda pendiente hacer un if else o switch case para todos los timers disponibles
+	ADC1->CR2 |= 0x7 << ADC_CR2_EXTSEL_Pos;
 }
 
 void adc_Config_MultiCH(ADC_Config_t *adcConfig, uint8_t numberOfCH){
