@@ -100,6 +100,7 @@ int main(void)
     /* Loop forever */
 	while(1){
 		if(data_recibida_USART != '\0'){
+			interruptWriteChar(&USART_h, data_recibida_USART);
 			buffer_Recepcion[contador_Recepcion] = data_recibida_USART;
 			contador_Recepcion++;
 
@@ -131,6 +132,7 @@ int main(void)
 void BasicTimer2_Callback(void){
 	GPIOxTooglePin(&blinkyLed);
 	GPIOxTooglePin(&blinkyLedH1);
+
 }
 
 void callback_USART2_RX(void){
@@ -183,7 +185,7 @@ void chequear_Comando(char *ptrBuffer){
 	}
 
 	else {
-		interruptWriteMsg(&USART_h, "Comando erróneo.");
+		interruptWriteMsg(&USART_h, "Comando erróneo.\n");
 	}
 
 }
@@ -193,7 +195,7 @@ void calibrar_HSITRIM(void){
 	interruptWriteMsg(&USART_h, "Ajuste de reloj\n");
 	interruptWriteMsg(&USART_h, "Para aumentar presione 'u'\n");
 	interruptWriteMsg(&USART_h, "Para disminuir presione 'd'\n");
-	interruptWriteMsg(&USART_h, "Para salir presione 's'");
+	interruptWriteMsg(&USART_h, "Para salir presione 's'\n");
 
 	while(data_recibida_USART == 'c'){
 

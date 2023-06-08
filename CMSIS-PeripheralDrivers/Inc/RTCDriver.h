@@ -10,6 +10,9 @@
 
 #include <stm32f4xx.h>
 
+#define RTC_KEY1	0XCA
+#define RTC_KEY2	0x53
+
 #define PM 	1
 #define AM	0
 
@@ -48,8 +51,7 @@ void RTC_Date_Change(uint8_t date, uint8_t month, uint8_t year,  uint8_t weekday
 void save_RTC_Data(RTC_Data_t *ptrRTC_DAta);
 uint8_t binaryToBCD(uint8_t bin_Value);
 
-#define RTC_KEY1	0XCA
-#define RTC_KEY2	0x53
+
 
 
 

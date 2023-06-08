@@ -55,35 +55,47 @@ void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds, uint8_t mer
 		__NOP();
 	}
 
+	/* Notación 24 horas */
+	RTC->CR &= ~RTC_CR_FMT;
+
 	/* Reset */
 	RTC->TR = 0;
 
-	/* Inicio de configuraciones para reloj */
-	if(meridian == AM || meridian == PM){
-		RTC->CR |= RTC_CR_FMT; // Notación AM/PM
-		if(meridian == AM){
-			/* Horas de la mañana */
-			RTC->TR &= ~RTC_TR_PM;
-		} else {
-			/* Horas de la tarde */
-			RTC->TR |= RTC_TR_PM;
-		}
-	}
-	else {
-		RTC->CR &= ~RTC_CR_FMT; // Notación 24 horas
-	}
+//	/* Inicio de configuraciones para reloj */
+//	if(meridian == AM || meridian == PM){
+//		RTC->CR |= RTC_CR_FMT; // Notación AM/PM
+//		if(meridian == AM){
+//			/* Horas de la mañana */
+//			RTC->TR &= ~RTC_TR_PM;
+//		} else {
+//			/* Horas de la tarde */
+//			RTC->TR |= RTC_TR_PM;
+//		}
+//	}
+//	else {
+//		RTC->CR &= ~RTC_CR_FMT; // Notación 24 horas
+//	}
 
 	/* Conversión a codificación BCD y escritura de hora */
-	uint8_t auxVariable = binaryToBCD(hour);
-	RTC->TR |= auxVariable << RTC_TR_HU_Pos;
+	uint8_t decenas = hour/10;
+	RTC->TR |= (decenas & 0x3) << RTC_TR_HT_Pos;
+
+	uint8_t unidades = hour%10;
+	RTC->TR |= (unidades & 0xF) << RTC_TR_HU_Pos;
 
 	/* Conversión a codificación BCD y escritura de minutos */
-	auxVariable = binaryToBCD(minutes);
-	RTC->TR |= auxVariable << RTC_TR_MNU_Pos;
+	decenas = minutes/10;
+	RTC->TR |= (decenas & 0x7) << RTC_TR_MNT_Pos;
+
+	unidades = minutes%10;
+	RTC->TR |= (unidades & 0xF) << RTC_TR_MNU_Pos;
 
 	/* Conversión a codificación BCD y escritura de segundos */
-	auxVariable = binaryToBCD(seconds);
-	RTC->TR |= auxVariable << RTC_TR_SU;
+	decenas = seconds/10;
+	RTC->TR |= (decenas & 0x7) << RTC_TR_ST_Pos;
+
+	unidades = seconds%10;
+	RTC->TR |= (unidades & 0xF) << RTC_TR_SU_Pos;
 
 	/* Desactivar estado de inicialización */
 	RTC->ISR &= ~RTC_ISR_INIT;
@@ -114,16 +126,26 @@ void RTC_Date_Change(uint8_t date, uint8_t month, uint8_t year,  uint8_t weekday
 	RTC->DR = 0;
 
 	/* Conversión a codificación BCD y escritura de año */
-	uint8_t auxVariable = binaryToBCD(year);
-	RTC->DR |= auxVariable << RTC_DR_YU_Pos;
+	uint8_t decenas = year/10;
+	RTC->DR |= (decenas & 0xF) << RTC_DR_YT_Pos;
 
-	/* Conversión a codificación BCD y escritura de año */
-	auxVariable = binaryToBCD(month);
-	RTC->DR |= auxVariable << RTC_DR_MU_Pos;
+	uint8_t unidades = year%10;
+	RTC->DR |= (unidades & 0xF) << RTC_DR_YU_Pos;
 
-	/* Conversión a codificación BCD y escritura de año */
-	auxVariable = binaryToBCD(date);
-	RTC->DR |= auxVariable << RTC_DR_DU_Pos;
+	/* Conversión a codificación BCD y escritura de mes */
+	decenas = year/10;
+	RTC->DR |= (decenas & 0x1) << RTC_DR_MT_Pos;
+
+	unidades = year%10;
+	RTC->DR |= (unidades & 0xF) << RTC_DR_MU_Pos;
+
+	/* Conversión a codificación BCD y escritura de fecha */
+	decenas = date/10;
+	RTC->DR |= (decenas & 0xF) << RTC_DR_DT_Pos;
+
+	unidades = date%10;
+	RTC->DR |= (unidades & 0xF) << RTC_DR_DU_Pos;
+
 
 	/* Escritura de día de la semana */
 	RTC->DR |= weekday << RTC_DR_WDU_Pos;
@@ -165,52 +187,48 @@ uint16_t BCDToBinary(uint8_t BCD_value){
 
 void save_RTC_Data(RTC_Data_t *ptrRTC_DAta){
 	uint16_t auxVariable = 0;
-
-	/* Lectura registro AM/PM y guardado */
-	// La máscara es para tomar solo el bit de meridiano
-	auxVariable = (RTC->TR >> RTC_TR_PM_Pos) & 0x1;
-	ptrRTC_DAta->meridian = auxVariable;
+	uint8_t decenas = 0;
+	uint8_t unidades = 0;
 
 	/* Lectura registro horas y guardado */
-	// La máscara es para tomar los 6 bits asociados a la hora
-	auxVariable = (RTC->TR >> RTC_TR_HU_Pos) & 0x3F;
-	auxVariable = BCDToBinary(auxVariable);
-	ptrRTC_DAta->hour = auxVariable;
+	// Las máscaras son para tomar los 6 bits asociados a la hora
+	decenas = ((RTC->TR >> RTC_TR_HT_Pos) & 0x3)*10;
+	unidades = (RTC->TR >> RTC_TR_HU_Pos) & 0xF;
+	ptrRTC_DAta->hour = decenas + unidades;
 
 	/* Lectura registro minutos y guardado */
-	// La máscara es para tomar los 7 bits asociados a los minutos
-	auxVariable = (RTC->TR >> RTC_TR_MNU_Pos) & 0x7F;
-	auxVariable = BCDToBinary(auxVariable);
-	ptrRTC_DAta->minutes = auxVariable;
+	// Las máscaras son para tomar los 7 bits asociados a los minutos
+	decenas = ((RTC->TR >> RTC_TR_MNT_Pos) & 0x7)*10;
+	unidades = (RTC->TR >> RTC_TR_MNU_Pos) & 0xF;
+	ptrRTC_DAta->minutes = decenas + unidades;
 
 	/* Lectura registro segundos y guardado */
-	// La máscara es para tomar los 7 bits asociados a los segundos
-	auxVariable = (RTC->TR >> RTC_TR_SU_Pos) & 0x7F;
-	auxVariable = BCDToBinary(auxVariable);
-	ptrRTC_DAta->seconds = auxVariable;
+	// Las máscaras son para tomar los 7 bits asociados a los segundos
+	decenas = ((RTC->TR >> RTC_TR_ST_Pos) & 0x7)*10;
+	unidades = (RTC->TR >> RTC_TR_SU_Pos) & 0xF;
+	ptrRTC_DAta->seconds = decenas + unidades;
 
 	/* Lectura registro año y guardado */
-	// La máscara es para tomar los 8 bits asociados al año
-	auxVariable = (RTC->DR >> RTC_DR_YU_Pos) & 0xFF;
-	auxVariable = BCDToBinary(auxVariable);
-	ptrRTC_DAta->year = auxVariable;
+	// Las máscaras son para tomar los 8 bits asociados al año
+	decenas = ((RTC->DR >> RTC_DR_YT_Pos) & 0xF)*10;
+	unidades = (RTC->DR >> RTC_DR_YU_Pos) & 0xF;
+	ptrRTC_DAta->year = decenas + unidades;
 
 	/* Lectura registro mes y guardado */
-	// La máscara es para tomar los 5 bits asociados al mes
-	auxVariable = (RTC->DR >> RTC_DR_MU_Pos) & 0x1F;
-	auxVariable = BCDToBinary(auxVariable);
-	ptrRTC_DAta->month = auxVariable;
+	// Las máscaras son para tomar los 5 bits asociados al mes
+	decenas = ((RTC->DR >> RTC_DR_MT_Pos) & 0x1)*10;
+	unidades = (RTC->DR >> RTC_DR_MU_Pos) & 0xF;
+	ptrRTC_DAta->month = decenas + unidades;
 
 	/* Lectura registro día y guardado */
-	// La máscara es para tomar los 6 bits asociados al día
-	auxVariable = (RTC->DR >> RTC_DR_DU_Pos) & 0x3F;
-	auxVariable = BCDToBinary(auxVariable);
-	ptrRTC_DAta->date = auxVariable;
+	// Las máscaras son para tomar los 6 bits asociados al día
+	decenas = ((RTC->DR >> RTC_DR_DT_Pos) & 0x3)*10;
+	unidades = (RTC->DR >> RTC_DR_DU_Pos) & 0xF;
+	ptrRTC_DAta->date = decenas + unidades;
 
 	/* Lectura registro día de semana y guardado */
 	// La máscara es para tomar los 3 bits asociados al día de la semana
 	auxVariable = (RTC->DR >> RTC_DR_WDU_Pos) & 0x7;
-	auxVariable = BCDToBinary(auxVariable);
 	switch (auxVariable) {
 		case MONDAY:
 			strcpy(ptrRTC_DAta->weekday, "LUNES");
