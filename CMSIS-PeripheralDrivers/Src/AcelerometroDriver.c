@@ -183,10 +183,15 @@ float raw_data_Z(I2C_Handler_t *accel_handler){
 }
 
 
-float read_XYZ_data(I2C_Handler_t *accel_handler, axis_Data_t *axis_Data){
+void read_XYZ_data(I2C_Handler_t *accel_handler, axis_Data_t *axis_Data, uint8_t acel_Pos){
 	// Variables auxiliares
-	uint8_t Axis_Low = 0;
-	uint8_t Axis_High = 0;
+	uint8_t XAxis_Low = 0;
+	uint8_t XAxis_High = 0;
+	uint8_t YAxis_Low = 0;
+	uint8_t YAxis_High = 0;
+	uint8_t ZAxis_Low = 0;
+	uint8_t ZAxis_High = 0;
+
 	uint16_t Axis_full = 0;
 
 	/* Generar condicion de inicio */
@@ -198,7 +203,6 @@ float read_XYZ_data(I2C_Handler_t *accel_handler, axis_Data_t *axis_Data){
 	/* Enviar dirección de memoria a leer */
 	i2c_sendMemoryAddress(accel_handler, ACCEL_XOUT_L);
 
-	i2c_sendMemoryAddress(accel_handler, ACCEL_XOUT_H);
 
 	/* Crear condición de RESTART */
 	i2c_reStartTransaction(accel_handler);
@@ -206,23 +210,29 @@ float read_XYZ_data(I2C_Handler_t *accel_handler, axis_Data_t *axis_Data){
 	/* Se vuelve a enviar la dirección con indicación de LECTURA */
 	i2c_sendSlaveAddressRW(accel_handler, accel_handler->slaveAddress, I2C_READ_DATA);
 
-	Axis_Low = i2c_readDataByte(accel_handler);
+	i2c_sendAck(accel_handler);
 
+	XAxis_Low = i2c_readDataByte(accel_handler);
+	XAxis_High = i2c_readDataByte(accel_handler);
+	Axis_full = (XAxis_High << 8 | XAxis_Low) * (0.0039*9.8);
+	axis_Data->X_Data[0] = Axis_full;
+
+	YAxis_Low = i2c_readDataByte(accel_handler);
+	YAxis_High = i2c_readDataByte(accel_handler);
+	Axis_full = (YAxis_High << 8 | YAxis_Low) * (0.0039*9.8);
+	axis_Data->X_Data[0] = Axis_full;
+
+	ZAxis_Low = i2c_readDataByte(accel_handler);
+	/* Generar condición NACK para que el esclavo solo envíe el último byte */
 	i2c_sendNoAck(accel_handler);
+	ZAxis_High = i2c_readDataByte(accel_handler);
+	Axis_full = (ZAxis_High << 8 | ZAxis_Low) * (0.0039*9.8);
 
-	Axis_High = i2c_readDataByte(accel_handler);
+	axis_Data->X_Data[0] = Axis_full;
 
-	Axis_full = Axis_High << 8 | Axis_Low;
-
-	/* Generar condición NACK para que el esclavo solo envíe 1 byte */
-	i2c_sendNoAck(accel_handler);
 
 	/* Generar condición de parada */
 	i2c_stopTransaction(accel_handler);
-
-	float Data = Axis_full*(0.0039*9.8);
-
-	return Data;
 }
 
 

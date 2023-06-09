@@ -67,7 +67,8 @@ int main(void)
 	/* Activador coprocesador matemático - FPU */
 	SCB->CPACR |= (0xF << 20);
 	inicializacion_Led_Estado();
-	inicializacion_USART2();
+	inicializ
+	acion_USART2();
 	inicializacion_pines_I2C();
 	inicializacion_AXL345(&USART_handler, &AXL345);
 
@@ -103,6 +104,7 @@ int main(void)
 				float prueba = read_XYZ_data(&AXL345, &datos_muestreo);
 				sprintf(buffer_datos, "%.2f", prueba);
 				interruptWriteMsg(&USART_handler, buffer_datos);
+				data_recibida_USART = '\0';
 			}
 		}
 	}
@@ -131,7 +133,7 @@ void inicializacion_Led_Estado(void){
 	// Timer para LEDs de estado usando el LED2 y pin H0
 	timerLed.ptrTIMx = TIM2;
 	timerLed.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
-	timerLed.TIMx_Config.TIMx_speed = BITMER_SPEED_16Mhz_100us;
+	timerLed.TIMx_Config.TIMx_speed = BTIMER_SPEED_16Mhz_100us;
 	timerLed.TIMx_Config.TIMx_period = 2500; 			// 250 ms
 	timerLed.TIMx_Config.TIMx_interruptEnable = ENABLE;
 	BasicTimer_Config(&timerLed);

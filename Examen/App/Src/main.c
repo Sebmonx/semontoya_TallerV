@@ -31,6 +31,7 @@
 #include "USARTxDriver.h"
 #include "AdcDriver.h"
 #include "RTCDriver.h"
+#include "arm_math.h"
 #include "funciones.h"
 
 // Handlers blinky led
@@ -88,7 +89,14 @@ unsigned int parametro_3 = 0;
 RTC_Data_t RTC_Data = {0};
 uint8_t weekday = 0;
 
-
+// Variables FFT
+uint32_t ifftFlag = 0;
+uint32_t doBitReverse = 1;
+arm_rfft_fast_instance_f32 config_Rfft_fast_32;
+arm_cfft_radix4_instance_f32 configRadix4_f32;
+arm_status status = ARM_MATH_ARGUMENT_ERROR;
+arm_status statusIntFFT = ARM_MATH_ARGUMENT_ERROR;
+uint16_t fftsize = 1024;
 
 int main(void)
 {
@@ -201,45 +209,11 @@ void chequear_Comando(char *ptrBuffer){
 	else if(strcasecmp(cmd, "calibrarReloj") == 0){
 		calibrar_HSITRIM();
 	}
-	else if(strcasecmp(cmd, "muestreoADC") == 0){
-		parametro_1 = parametro_1 * 10;
-
-		if(8000 <= parametro_1  && parametro_1 <= 15000){
-			updateFrequency(&PWM_h, parametro_1);
-			sprintf(buffer_datos, "Frecuencia de muestreo actualizada a %d\n", parametro_1);
-			interruptWriteMsg(&USART_h, buffer_datos);
-		}
-		else {
-			interruptWriteMsg(&USART_h, "Elegir una frecuencia adecuada.");
-		}
+	else if(strcasecmp(cmd, "velocidadADC") == 0){
+		velocidad_MuestreoADC();
 	}
 	else if(strcasecmp(cmd, "iniciarADC") == 0){
-		ADC_Completo = 0;
-		startPwmSignal(&PWM_h);
-
-		while(ADC_Completo != 2){
-			__NOP();
-		}
-		ADC_Contador = 0;
-
-
-		interruptWriteMsg(&USART_h, "Datos canal 0\n");
-		for(int i = 0; i < 256; i++){
-			sprintf(buffer_datos, "%d : %d\n", (i+1), ADC_Data_CH0[i]);
-			interruptWriteMsg(&USART_h, buffer_datos);
-			delay_ms(1);
-		}
-
-		interruptWriteMsg(&USART_h, "Datos canal 1\n");
-		for(int i = 0; i < 256; i++){
-			sprintf(buffer_datos, "%d : %d\n", (i+1), ADC_Data_CH1[i]);
-			interruptWriteMsg(&USART_h, buffer_datos);
-			delay_ms(1);
-		}
-
-
-
-
+		inicio_MuestreoADC();
 	}
 	else {
 		interruptWriteMsg(&USART_h, "Comando erróneo.\n");
@@ -247,8 +221,45 @@ void chequear_Comando(char *ptrBuffer){
 
 }
 
+void inicio_MuestreoADC(void){
+	ADC_Completo = 0;
+	startPwmSignal(&PWM_h);
+
+	while(ADC_Completo != 2){
+		__NOP();
+	}
+	ADC_Contador = 0;
+
+
+	interruptWriteMsg(&USART_h, "Datos canal 0\n");
+	for(int i = 0; i < 256; i++){
+		sprintf(buffer_datos, "%d : %d\n", (i+1), ADC_Data_CH0[i]);
+		interruptWriteMsg(&USART_h, buffer_datos);
+		delay_ms(1);
+	}
+
+	interruptWriteMsg(&USART_h, "Datos canal 1\n");
+	for(int i = 0; i < 256; i++){
+		sprintf(buffer_datos, "%d : %d\n", (i+1), ADC_Data_CH1[i]);
+		interruptWriteMsg(&USART_h, buffer_datos);
+		delay_ms(1);
+	}
+}
+
+void velocidad_MuestreoADC(void){
+	parametro_1 = parametro_1 * 10;
+
+	if(8000 <= parametro_1  && parametro_1 <= 15000){
+		updateFrequency(&PWM_h, parametro_1);
+		sprintf(buffer_datos, "Frecuencia de muestreo actualizada a %d\n", parametro_1);
+		interruptWriteMsg(&USART_h, buffer_datos);
+	}
+	else {
+		interruptWriteMsg(&USART_h, "Elegir una frecuencia adecuada.");
+	}
+}
+
 void calibrar_HSITRIM(void){
-	data_recibida_USART = 'c';
 	interruptWriteMsg(&USART_h, "Ajuste de reloj\n");
 	interruptWriteMsg(&USART_h, "Para aumentar presione 'u'\n");
 	interruptWriteMsg(&USART_h, "Para disminuir presione 'd'\n");
@@ -257,7 +268,6 @@ void calibrar_HSITRIM(void){
 	while(strcasecmp(cmd, "calibrarReloj") == 0){
 
 		if(data_recibida_USART == 'u'){
-			data_recibida_USART = 'c';
 			calib_Reloj++;
 			if(calib_Reloj == 31){
 				interruptWriteMsg(&USART_h, "No puede incrementar más el ajuste.\n");
@@ -269,8 +279,8 @@ void calibrar_HSITRIM(void){
 			interruptWriteMsg(&USART_h, buffer_datos);
 		}
 		else if(data_recibida_USART == 'd'){
-			data_recibida_USART = 'c';
 			calib_Reloj--;
+
 			if(calib_Reloj == 0){
 				interruptWriteMsg(&USART_h, "No puede disminuir más el ajuste.\n");
 				calib_Reloj = 0;

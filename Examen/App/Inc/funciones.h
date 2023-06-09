@@ -45,7 +45,8 @@ void calibrar_HSITRIM(void);
 void cambiar_Fecha_RTC(void);
 void cambiar_Hora_RTC(void);
 void inicializacion_Trigger_ADC(void);
-
+void velocidad_MuestreoADC(void);
+void inicio_MuestreoADC(void);
 
 
 #endif /* FUNCIONES_H_ */
