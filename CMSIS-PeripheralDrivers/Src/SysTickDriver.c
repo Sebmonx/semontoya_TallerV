@@ -21,17 +21,16 @@ void config_SysTick_ms(uint32_t systemClock){
     // Cargando el valor del limite de incrementos que representan 1ms.
     switch(systemClock){
     //caso para el reloj HSI-> 16MHz
-    case 0:
-    	SysTick->LOAD = SYSTICK_LOAD_VALUE_16MHz_1ms;
-    	break;
-    //caso del reloj HSE
-    case 1:
+    case 16:
     	SysTick->LOAD = SYSTICK_LOAD_VALUE_16MHz_1ms;
     	break;
     //caso del reloj PLL 80MHz
-    case 2:
+    case 80:
     	SysTick->LOAD = SYSTICK_LOAD_VALUE_80MHz_1ms;
     	break;
+    case 100:
+     	SysTick->LOAD = SYSTICK_LOAD_VALUE_100MHz_1ms;
+     	break;
     //en caso de un valor diferente
     default:
     	SysTick->LOAD = SYSTICK_LOAD_VALUE_16MHz_1ms;

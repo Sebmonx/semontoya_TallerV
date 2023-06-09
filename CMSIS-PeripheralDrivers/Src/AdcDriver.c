@@ -13,7 +13,7 @@
 GPIO_Handler_t handlerAdcPin = {0};
 uint16_t adcRawData = 0;
 
-void adc_ExternalTrig(PWM_Handler_t *ptrTimer, GPIO_Handler_t *ptrB4){
+void adc_ExternalTrig(void){
 
 	/* Activación por medio externo de ADC */
 	ADC1->CR2 |= ADC_CR2_EXTEN;
@@ -190,7 +190,7 @@ uint16_t getADC(void){
 
 float get_Voltage(ADC_Config_t *adcConfig){
 
-	float measured_voltage = 3.3;
+	float measured_voltage = adcRawData;
 
 	switch(adcConfig->resolution){
 

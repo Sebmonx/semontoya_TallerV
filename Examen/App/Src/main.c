@@ -69,7 +69,7 @@ ADC_Config_t ADC_h = {0};
 uint16_t ADC_Data[2] = {0};
 uint16_t ADC_Data_CH0[256] = {0};
 uint8_t ADC_Data_CH1[256] = {0};
-uint8_t ADC_Contador = 0;
+uint16_t ADC_Contador = 0;
 uint8_t numero_De_Canales = 2;
 uint8_t ADC_Completo = 0;
 
@@ -97,11 +97,14 @@ int main(void)
 
 
 	systemClock_100MHz(&PLL_h);
+	frecuencia = getPLL();
+	config_SysTick_ms(frecuencia);
 	PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
-	RTC_config();
+//	RTC_config();
 	inicializacion_Led_Estado();
 	inicializacion_USART2();
 	inicializacion_USART6();
+	inicializacion_ADC();
 	inicializacion_Trigger_ADC();
 	interruptWriteMsg(&USART_h, buffer_datos);
 
@@ -116,11 +119,6 @@ int main(void)
 				buffer_Recepcion[contador_Recepcion -1] = '\0';
 				contador_Recepcion = 0;
 				string_Completada = true;
-//				startSingleADC();
-//				startSingleADC();
-//				sprintf(buffer_datos,"%d , %d", ADC_Data[0], ADC_Data[1]);
-//				interruptWriteMsg(&USART_handler, buffer_datos);
-//				data_recibida_USART = '\0';
 			}
 
 			data_recibida_USART = '\0';
@@ -152,11 +150,20 @@ void callback_USART6_RX(void){
 }
 
 void adcComplete_Callback(void){
-	ADC_Data[ADC_Contador] = getADC();
-	ADC_Contador++;
-	if(ADC_Contador == numero_De_Canales){
-		ADC_Contador = 0;
+	if(ADC_Completo == 0){
+		ADC_Data_CH0[ADC_Contador] = getADC();
 		ADC_Completo = 1;
+	}
+	else if(ADC_Completo == 1){
+		ADC_Data_CH1[ADC_Contador] = getADC();
+		ADC_Completo = 0;
+		ADC_Contador++;
+	}
+
+	if(ADC_Contador >= 257){
+		stopPwmSignal(&PWM_h);
+		ADC_Contador = 0;
+		ADC_Completo = 2;
 	}
 }
 
@@ -194,7 +201,44 @@ void chequear_Comando(char *ptrBuffer){
 	else if(strcasecmp(cmd, "calibrarReloj") == 0){
 		calibrar_HSITRIM();
 	}
-	else if(strcasecmp(cmd, "iniciarADC")){
+	else if(strcasecmp(cmd, "muestreoADC") == 0){
+		parametro_1 = parametro_1 * 10;
+
+		if(8000 <= parametro_1  && parametro_1 <= 15000){
+			updateFrequency(&PWM_h, parametro_1);
+			sprintf(buffer_datos, "Frecuencia de muestreo actualizada a %d\n", parametro_1);
+			interruptWriteMsg(&USART_h, buffer_datos);
+		}
+		else {
+			interruptWriteMsg(&USART_h, "Elegir una frecuencia adecuada.");
+		}
+	}
+	else if(strcasecmp(cmd, "iniciarADC") == 0){
+		ADC_Completo = 0;
+		startPwmSignal(&PWM_h);
+
+		while(ADC_Completo != 2){
+			__NOP();
+		}
+		ADC_Contador = 0;
+
+
+		interruptWriteMsg(&USART_h, "Datos canal 0\n");
+		for(int i = 0; i < 256; i++){
+			sprintf(buffer_datos, "%d : %d\n", (i+1), ADC_Data_CH0[i]);
+			interruptWriteMsg(&USART_h, buffer_datos);
+			delay_ms(1);
+		}
+
+		interruptWriteMsg(&USART_h, "Datos canal 1\n");
+		for(int i = 0; i < 256; i++){
+			sprintf(buffer_datos, "%d : %d\n", (i+1), ADC_Data_CH1[i]);
+			interruptWriteMsg(&USART_h, buffer_datos);
+			delay_ms(1);
+		}
+
+
+
 
 	}
 	else {
@@ -404,7 +448,6 @@ void inicializacion_Led_Estado(void){
 
 /* Pin A2 y A3 */
 void inicializacion_USART2(void){
-	frecuencia = getPLL();
 
 	// Para realizar transmisión por USB se utilizan los pines PA2 (TX) y PA3 (RX)
 	// Inicializacion de PIN A2 con funcion alternativa de USART2
@@ -470,10 +513,11 @@ void inicializacion_ADC(void){
 	ADC_h.channel[1] = ADC_CHANNEL_1;
 	ADC_h.dataAlignment = ADC_ALIGNMENT_RIGHT;
 	ADC_h.resolution = ADC_RESOLUTION_10_BIT;
-	ADC_h.samplingPeriod[0] = ADC_SAMPLING_PERIOD_15_CYCLES;
-	ADC_h.samplingPeriod[0] = ADC_SAMPLING_PERIOD_15_CYCLES;
+	ADC_h.samplingPeriod[0] = ADC_SAMPLING_PERIOD_480_CYCLES;
+	ADC_h.samplingPeriod[1] = ADC_SAMPLING_PERIOD_480_CYCLES;
 	adc_Config_MultiCH(&ADC_h, numero_De_Canales);
 
+	adc_ExternalTrig();
 }
 
 /* Pin B4 */
@@ -493,5 +537,5 @@ void inicializacion_Trigger_ADC(void){
 	PWM_h.config.periodo = 66;
 	PWM_h.config.duttyCicle = 33;
 	pwm_Config(&PWM_h);
-	startPwmSignal(&PWM_h);
+//	startPwmSignal(&PWM_h);
 }
