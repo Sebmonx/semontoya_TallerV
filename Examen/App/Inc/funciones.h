@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <string.h>
+#include "arm_math.h"
 #include "BasicTimer.h"
 #include "ExtiDriver.h"
 #include "GPIOxDriver.h"
@@ -35,7 +36,7 @@ void inicializacion_ADC(void);
 void inicializacion_USART2(void);
 void inicializacion_USART6(void);
 void chequear_Comando(char *ptrBuffer);
-void imprimir_help(void);
+void imprimir_Ayuda(void);
 void test_CMD(void);
 void elegir_Reloj_MCO1(void);
 void elegir_PreScaler_MCO1(void);
@@ -47,6 +48,11 @@ void cambiar_Hora_RTC(void);
 void inicializacion_Trigger_ADC(void);
 void velocidad_MuestreoADC(void);
 void inicio_MuestreoADC(void);
-
+void inicializacion_I2C(void);
+void inicializacion_PWM_Prueba(void);
+void inicio_CapturaAXL(void);
+void calculo_FFT(void);
+void imprimir_Ejemplos(void);
+void inicializacion_Sistema(void);
 
 #endif /* FUNCIONES_H_ */

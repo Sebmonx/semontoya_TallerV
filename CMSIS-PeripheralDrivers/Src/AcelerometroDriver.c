@@ -13,19 +13,21 @@
 
 
 uint8_t i2c_dataBuffer = 0;
-char usart_dataBuffer[128] = "Acelerometro AXL345 testing...";
+char usart_dataBuffer[128] = "AXL345 inicializando...\n";
 
 void inicializacion_AXL345(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler){	/* Mensaje de inicio */
-	interruptWriteMsg(Usart_handler, usart_dataBuffer);
+//	interruptWriteMsg(Usart_handler, usart_dataBuffer);
+
+	/* Configuración a modo de medida*/
+	measure_Mode_config(accel_handler);
 
 	/* Lectura e impresión de registro ID */
 	device_ID(Usart_handler, accel_handler);
 
-	/* Configuración a modo de medida*/
-	measure_Mode_config(accel_handler);
-	//constant_100Khz_measuring(accel_handler, timer100Khz_handler, pinTimer100khz);
 	/* Confirmación de configuración */
 	read_PowerMode(Usart_handler, accel_handler);
+
+	interruptWriteMsg(Usart_handler, "AXL Listo.\n");
 }
 
 void single_data_X(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler,
@@ -99,8 +101,9 @@ void read_PowerMode(USART_Handler_t *Usart_handler, I2C_Handler_t *accel_handler
 
 void measure_Mode_config(I2C_Handler_t *accel_handler){
  	/* Configuración a modo de medida*/
-	i2c_writeSingleRegister(accel_handler, 0x2C,0xF);
 	i2c_writeSingleRegister(accel_handler, POWER_CTL, MEASURE_MODE);
+	i2c_writeSingleRegister(accel_handler, 0x2C,0xF);
+	i2c_writeSingleRegister(accel_handler, 0x2C, 0b1011);
 
 }
 
@@ -215,12 +218,12 @@ void read_XYZ_data(I2C_Handler_t *accel_handler, axis_Data_t *axis_Data, uint8_t
 	XAxis_Low = i2c_readDataByte(accel_handler);
 	XAxis_High = i2c_readDataByte(accel_handler);
 	Axis_full = (XAxis_High << 8 | XAxis_Low) * (0.0039*9.8);
-	axis_Data->X_Data[0] = Axis_full;
+	axis_Data->X_Data[acel_Pos] = Axis_full;
 
 	YAxis_Low = i2c_readDataByte(accel_handler);
 	YAxis_High = i2c_readDataByte(accel_handler);
 	Axis_full = (YAxis_High << 8 | YAxis_Low) * (0.0039*9.8);
-	axis_Data->X_Data[0] = Axis_full;
+	axis_Data->Y_Data[acel_Pos] = Axis_full;
 
 	ZAxis_Low = i2c_readDataByte(accel_handler);
 	/* Generar condición NACK para que el esclavo solo envíe el último byte */
@@ -228,14 +231,52 @@ void read_XYZ_data(I2C_Handler_t *accel_handler, axis_Data_t *axis_Data, uint8_t
 	ZAxis_High = i2c_readDataByte(accel_handler);
 	Axis_full = (ZAxis_High << 8 | ZAxis_Low) * (0.0039*9.8);
 
-	axis_Data->X_Data[0] = Axis_full;
+	axis_Data->Z_Data[acel_Pos] = Axis_full;
 
 
 	/* Generar condición de parada */
 	i2c_stopTransaction(accel_handler);
 }
 
+void read_Z_data(I2C_Handler_t *accel_handler, uint16_t *axis_Data, uint16_t acel_Pos){
+	// Variables auxiliares
+	uint8_t ZAxis_Low = 0;
+	uint8_t ZAxis_High = 0;
+	uint16_t Axis_full = 0;
 
+	/* Generar condicion de inicio */
+	i2c_startTransaction(accel_handler);
+
+	/* Enviar dirección de dispositivo e indicación de ESCRIBIR */
+	i2c_sendSlaveAddressRW(accel_handler, accel_handler->slaveAddress, I2C_WRITE_DATA);
+
+	/* Enviar dirección de memoria a leer */
+	i2c_sendMemoryAddress(accel_handler, ACCEL_ZOUT_L);
+
+
+	/* Crear condición de RESTART */
+	i2c_reStartTransaction(accel_handler);
+
+	/* Se vuelve a enviar la dirección con indicación de LECTURA */
+	i2c_sendSlaveAddressRW(accel_handler, accel_handler->slaveAddress, I2C_READ_DATA);
+
+	/**/
+	i2c_sendAck(accel_handler);
+
+	/**/
+	ZAxis_Low = i2c_readDataByte(accel_handler);
+
+	/* Generar condición NACK para que el esclavo solo envíe el último byte */
+	i2c_sendNoAck(accel_handler);
+	ZAxis_High = i2c_readDataByte(accel_handler);
+	Axis_full = (ZAxis_High << 8 | ZAxis_Low);
+
+	axis_Data[acel_Pos] = Axis_full;
+
+
+	/* Generar condición de parada */
+	i2c_stopTransaction(accel_handler);
+}
 
 
 

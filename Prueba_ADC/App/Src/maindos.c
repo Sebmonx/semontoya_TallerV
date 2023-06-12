@@ -143,7 +143,7 @@ void test_cmd(uint8_t parametro1, uint8_t parametro2, USART_Handler_t *ptrUSART)
 	interruptWriteMsg(&USART_handler, buffer_datos);
 }
 
-void imprimir_help(USART_Handler_t *ptrUSART){
+void imprimir_Ayuda(USART_Handler_t *ptrUSART){
 	interruptWriteMsg(&USART_handler, "Menú de comandos\n");
 	interruptWriteMsg(&USART_handler, "1) help - Imprimir este menú\n");
 	interruptWriteMsg(&USART_handler, "2) - Control 1 de MCO1 cambiar señal - Elige entre HSI, LSE o PLL\n");

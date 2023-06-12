@@ -38,7 +38,7 @@ void i2c_config(I2C_Handler_t *ptrHandlerI2C){
 	if(ptrHandlerI2C->MCU_frequency < 50){
 		ptrHandlerI2C->ptrI2Cx->CR2 |= (ptrHandlerI2C->MCU_frequency << I2C_CR2_FREQ_Pos);
 	} else {
-		ptrHandlerI2C->ptrI2Cx->CR2 |= (((ptrHandlerI2C->MCU_frequency)/2) << I2C_CR2_FREQ_Pos);
+		ptrHandlerI2C->ptrI2Cx->CR2 |= ((50) << I2C_CR2_FREQ_Pos);
 	}
 
 
@@ -58,9 +58,14 @@ void i2c_config(I2C_Handler_t *ptrHandlerI2C){
 			ptrHandlerI2C->ptrI2Cx->CCR |= (I2C_MODE_SM_16Mhz << I2C_CCR_CCR_Pos);
 			/* Registro que controla TRISE máximo */
 			ptrHandlerI2C->ptrI2Cx->TRISE |= I2C_MAX_TRISE_SM_16Mhz;
-		} else if(ptrHandlerI2C->MCU_frequency == 80){
+		}
+		else if(ptrHandlerI2C->MCU_frequency == 80){
 			ptrHandlerI2C->ptrI2Cx->CCR |= (I2C_MODE_SM_80Mhz << I2C_CCR_CCR_Pos);
 			ptrHandlerI2C->ptrI2Cx->TRISE |= I2C_MAX_TRISE_SM_80Mhz;
+		}
+		else if(ptrHandlerI2C->MCU_frequency == 100){
+			ptrHandlerI2C->ptrI2Cx->CCR |= (I2C_MODE_SM_100Mhz << I2C_CCR_CCR_Pos);
+			ptrHandlerI2C->ptrI2Cx->TRISE |= I2C_MAX_TRISE_SM_100Mhz;
 		}
 
 	}
@@ -74,6 +79,10 @@ void i2c_config(I2C_Handler_t *ptrHandlerI2C){
 		else if(ptrHandlerI2C->MCU_frequency == 80){
 			ptrHandlerI2C->ptrI2Cx->CCR |= (I2C_MODE_FM_80Mhz << I2C_CCR_CCR_Pos);
 			ptrHandlerI2C->ptrI2Cx->TRISE |= I2C_MAX_TRISE_FM_80Mhz;
+		}
+		else if(ptrHandlerI2C->MCU_frequency == 100){
+			ptrHandlerI2C->ptrI2Cx->CCR |= (I2C_MODE_FM_100Mhz << I2C_CCR_CCR_Pos);
+			ptrHandlerI2C->ptrI2Cx->TRISE |= I2C_MAX_TRISE_FM_100Mhz;
 		}
 	}
 

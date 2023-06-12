@@ -31,6 +31,7 @@
 #include "USARTxDriver.h"
 #include "AdcDriver.h"
 #include "RTCDriver.h"
+#include "AcelerometroDriver.h"
 #include "arm_math.h"
 #include "funciones.h"
 
@@ -38,6 +39,18 @@
 BasicTimer_Handler_t timerLed = {0};
 GPIO_Handler_t blinkyLed = {0};
 GPIO_Handler_t blinkyLedH1 = {0};
+
+// Variables I2C acelerometro
+BasicTimer_Handler_t Timer200hz = {0};
+
+GPIO_Handler_t pinSCL_AXL345 = {0};
+GPIO_Handler_t pinSDA_AXL345 = {0};
+I2C_Handler_t AXL345_h = {0};
+
+uint16_t datos_EjeZ[1024] = {0};
+uint16_t pos_Muestreo = 1024;
+uint8_t AXL_Capturar = 0;
+uint8_t AXL_Recibir = 0;
 
 // Variables transmisión USART
 GPIO_Handler_t PinTX2_h = {0};
@@ -49,8 +62,8 @@ GPIO_Handler_t PinRX6_h = {0};
 USART_Handler_t USART_h = {0};
 
 char data_recibida_USART = 0;
-char buffer_datos[64] = "Test\n";
-char buffer_Recepcion[64] = {0};
+char buffer_datos[256] = "Programa iniciado.\n";
+char buffer_Recepcion[256] = {0};
 uint8_t contador_Recepcion = 0;
 bool string_Completada = false;
 
@@ -62,8 +75,9 @@ system_Clock_data clock_Data = {0};
 
 uint8_t MCO1_clock = 0;
 uint8_t MCO1_prescaler = 0;
-uint8_t frecuencia = 0;
+uint8_t frecuencia = 16;
 uint8_t calib_Reloj = 12;
+
 
 // Variables ADC
 ADC_Config_t ADC_h = {0};
@@ -77,6 +91,7 @@ uint8_t ADC_Completo = 0;
 GPIO_Handler_t pinPWM_h = {0};
 PWM_Handler_t PWM_h = {0};
 
+
 // Variables comandos
 char cmd[64] = {0};
 char userMsg[256] = {0};
@@ -89,6 +104,7 @@ unsigned int parametro_3 = 0;
 RTC_Data_t RTC_Data = {0};
 uint8_t weekday = 0;
 
+
 // Variables FFT
 uint32_t ifftFlag = 0;
 uint32_t doBitReverse = 1;
@@ -97,24 +113,31 @@ arm_cfft_radix4_instance_f32 configRadix4_f32;
 arm_status status = ARM_MATH_ARGUMENT_ERROR;
 arm_status statusIntFFT = ARM_MATH_ARGUMENT_ERROR;
 uint16_t fftsize = 1024;
+float32_t datos_FFT[1024];
+float32_t datosFFT_T[1024];
+PWM_Handler_t testPWM = {0};
+GPIO_Handler_t testPinPWM = {0};
+
+// Variables para crear función seno
+float32_t sine_value = 0.0;
+float32_t sine_ArgValue = 0.0;
+#define SINE_SIZE 4096
+float32_t fs = 8000;
+float32_t f0 = 250;
+float32_t dt = 0.0;
+float32_t amplitud = 5;
+float32_t stopTime = 0.0;
+float32_t sineSignal[SINE_SIZE];
+float32_t transformed[SINE_SIZE];
+float32_t *ptrSineSignal;
+
+
+
 
 int main(void)
 {
-	/* Activador coprocesador matemático - FPU */
-	SCB->CPACR |= (0xF << 20);
+	inicializacion_Sistema();
 
-
-	systemClock_100MHz(&PLL_h);
-	frecuencia = getPLL();
-	config_SysTick_ms(frecuencia);
-	PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
-//	RTC_config();
-	inicializacion_Led_Estado();
-	inicializacion_USART2();
-	inicializacion_USART6();
-	inicializacion_ADC();
-	inicializacion_Trigger_ADC();
-	interruptWriteMsg(&USART_h, buffer_datos);
 
     /* Loop forever */
 	while(1){
@@ -143,12 +166,19 @@ int main(void)
 
 
 
-void BasicTimer2_Callback(void){
+void BasicTimer2_Callback(){
 	GPIOxTooglePin(&blinkyLed);
 	GPIOxTooglePin(&blinkyLedH1);
 
 }
 
+void BasicTimer5_Callback(){
+	if(pos_Muestreo < 1024){
+		AXL_Recibir = 1;
+	} else {
+		AXL_Capturar = 0;
+	}
+}
 //void callback_USART2_RX(void){
 //	data_recibida_USART = get_data_RX();
 //}cambio
@@ -183,15 +213,18 @@ void chequear_Comando(char *ptrBuffer){
 			&parametro_1, &parametro_2, &parametro_3);
 
 	if(strcasecmp(cmd, "ayuda") == 0){
-		imprimir_help();
+		imprimir_Ayuda();
+	}
+	else if(strcasecmp(cmd, "ejemplos") == 0){
+		imprimir_Ejemplos();
 	}
 	else if(strcasecmp(cmd, "test") == 0){
 		test_CMD();
 	}
-	else if(strcasecmp(cmd, "MCO1Reloj") == 0){
+	else if(strcasecmp(cmd, "relojMCO1") == 0){
 		elegir_Reloj_MCO1();
 	}
-	else if(strcasecmp(cmd, "MCO1Prescaler") == 0){
+	else if(strcasecmp(cmd, "prescalerMCO1") == 0){
 		elegir_PreScaler_MCO1();
 	}
 	else if(strcasecmp(cmd, "leerHora") == 0){
@@ -206,7 +239,7 @@ void chequear_Comando(char *ptrBuffer){
 	else if(strcasecmp(cmd, "cambiarHora") == 0){
 		cambiar_Hora_RTC();
 	}
-	else if(strcasecmp(cmd, "calibrarReloj") == 0){
+	else if(strcasecmp(cmd, "calibrarFrec") == 0){
 		calibrar_HSITRIM();
 	}
 	else if(strcasecmp(cmd, "velocidadADC") == 0){
@@ -215,11 +248,71 @@ void chequear_Comando(char *ptrBuffer){
 	else if(strcasecmp(cmd, "iniciarADC") == 0){
 		inicio_MuestreoADC();
 	}
+	else if(strcasecmp(cmd, "fourierAXL") == 0){
+		calculo_FFT();
+	}
+	else if(strcasecmp(cmd, "capturarAXL") == 0){
+		inicio_CapturaAXL();
+	}
 	else {
 		interruptWriteMsg(&USART_h, "Comando erróneo.\n");
 	}
 
 }
+
+
+void calculo_FFT(void){
+//	for(int i = 0; i < SINE_SIZE; i++){
+//		sineSignal[i] = amplitud * arm_sin_f32(2*M_PI*f0*(dt*i));
+//	}
+//
+//	arm_abs_f32(sineSignal, transformed, SINE_SIZE);
+
+	statusIntFFT = arm_rfft_fast_init_f32(&config_Rfft_fast_32,fftsize);
+
+	if(statusIntFFT == ARM_MATH_SUCCESS){
+		interruptWriteMsg(&USART_h, "EXITO en inicialización.\n");
+
+		int i = 0;
+		int j = 0;
+
+		if(datos_FFT[0] == 0){
+			interruptWriteMsg(&USART_h, "Por favor ingresar datos.\n");
+		}
+
+		arm_rfft_fast_f32(&config_Rfft_fast_32, datos_FFT, datosFFT_T, ifftFlag);
+		arm_abs_f32(datosFFT_T, datos_FFT, fftsize);
+
+		for(i = 1; i < fftsize; i++){
+			if(i % 2){
+				sprintf(buffer_datos, "%u : %#.6f\n", j, 2*datos_FFT[i]);
+				interruptWriteMsg(&USART_h, buffer_datos);
+				j++;
+			}
+		}
+		datos_FFT[0] = 0;
+
+	}
+	else {
+		interruptWriteMsg(&USART_h, "ERROR en inicialización.\n");
+	}
+}
+void inicio_CapturaAXL(void){
+	pos_Muestreo = 0;
+	AXL_Capturar = 1;
+	interruptWriteMsg(&USART_h, "Leyendo datos AXL...\n");
+	while(AXL_Capturar == 1){
+		if(AXL_Recibir == 1){
+			read_Z_data(&AXL345_h, datos_EjeZ, pos_Muestreo);
+			datos_FFT[pos_Muestreo] = (float) datos_EjeZ[pos_Muestreo] * (0.0039*9.8);
+			pos_Muestreo++;
+		}
+		AXL_Recibir = 0;
+	}
+
+	interruptWriteMsg(&USART_h, "Datos obtenidos.\n");
+}
+
 
 void inicio_MuestreoADC(void){
 	ADC_Completo = 0;
@@ -233,14 +326,14 @@ void inicio_MuestreoADC(void){
 
 	interruptWriteMsg(&USART_h, "Datos canal 0\n");
 	for(int i = 0; i < 256; i++){
-		sprintf(buffer_datos, "%d : %d\n", (i+1), ADC_Data_CH0[i]);
+		sprintf(buffer_datos, "%d ; %d\n", (i+1), ADC_Data_CH0[i]);
 		interruptWriteMsg(&USART_h, buffer_datos);
 		delay_ms(1);
 	}
 
 	interruptWriteMsg(&USART_h, "Datos canal 1\n");
 	for(int i = 0; i < 256; i++){
-		sprintf(buffer_datos, "%d : %d\n", (i+1), ADC_Data_CH1[i]);
+		sprintf(buffer_datos, "%d ; %d\n", (i+1), ADC_Data_CH1[i]);
 		interruptWriteMsg(&USART_h, buffer_datos);
 		delay_ms(1);
 	}
@@ -251,7 +344,7 @@ void velocidad_MuestreoADC(void){
 
 	if(8000 <= parametro_1  && parametro_1 <= 15000){
 		updateFrequency(&PWM_h, parametro_1);
-		sprintf(buffer_datos, "Frecuencia de muestreo actualizada a %d\n", parametro_1);
+		sprintf(buffer_datos, "Frecuencia de muestreo actualizada para %d\n", (parametro_1/10));
 		interruptWriteMsg(&USART_h, buffer_datos);
 	}
 	else {
@@ -260,12 +353,12 @@ void velocidad_MuestreoADC(void){
 }
 
 void calibrar_HSITRIM(void){
-	interruptWriteMsg(&USART_h, "Ajuste de reloj\n");
+	interruptWriteMsg(&USART_h, "Ajuste de frecuencia.\n");
 	interruptWriteMsg(&USART_h, "Para aumentar presione 'u'\n");
 	interruptWriteMsg(&USART_h, "Para disminuir presione 'd'\n");
 	interruptWriteMsg(&USART_h, "Para salir presione 's'\n");
 
-	while(strcasecmp(cmd, "calibrarReloj") == 0){
+	while(strcasecmp(cmd, "calibrarFrec") == 0){
 
 		if(data_recibida_USART == 'u'){
 			calib_Reloj++;
@@ -292,14 +385,21 @@ void calibrar_HSITRIM(void){
 		}
 
 		if(data_recibida_USART == 's'){
-			break;
+			cmd[0] = 'f';
 		}
+		data_recibida_USART = '\0';
 	}
+	interruptWriteMsg(&USART_h, "Frecuencia calibrada.\n");
 }
 
 void cambiar_Hora_RTC(void){
-	RTC_Time_Change(parametro_1, parametro_2, parametro_3);
-	leer_Hora_RTC();
+	if(parametro_1 < 24 && parametro_2 < 60 && parametro_3 < 60){
+		RTC_Time_Change(parametro_1, parametro_2, parametro_3);
+		leer_Hora_RTC();
+	}
+	else {
+		interruptWriteMsg(&USART_h, "Ingrese una hora valida.\n");
+	}
 }
 
 void cambiar_Fecha_RTC(void){
@@ -326,8 +426,14 @@ void cambiar_Fecha_RTC(void){
 		weekday = 7;
 	}
 
-	RTC_Date_Change(parametro_1, parametro_2, parametro_3, weekday);
-	leer_Fecha_RTC();
+	if(parametro_2 < 13 && parametro_1 < 32){
+		RTC_Date_Change(parametro_1, parametro_2, parametro_3, weekday);
+		leer_Fecha_RTC();
+	}
+	else {
+		interruptWriteMsg(&USART_h, "Ingrese una fecha valida.\n");
+	}
+
 }
 
 void leer_Fecha_RTC(void){
@@ -371,7 +477,7 @@ void elegir_PreScaler_MCO1(void){
 			break;
 
 		default:
-			interruptWriteMsg(&USART_h, "Intenta seleccionando el prescaler con un entero entre 2 y 5.\n");
+			interruptWriteMsg(&USART_h, "Elegir prescaler con un entero entre 2 y 5.\n");
 			break;
 	}
 }
@@ -393,7 +499,7 @@ void elegir_Reloj_MCO1(void){
 		interruptWriteMsg(&USART_h, "PLL seleccionado para MCO1.\n");
 	}
 	else {
-		interruptWriteMsg(&USART_h, "Intenta seleccionando entre hsi, lse o pll.\n");
+		interruptWriteMsg(&USART_h, "Intenta seleccionando entre HSI, LSE o PLL.\n");
 	}
 }
 
@@ -407,19 +513,64 @@ void test_CMD(void){
 	interruptWriteMsg(&USART_h, buffer_datos);
 }
 
-void imprimir_help(void){
+void imprimir_Ayuda(void){
+	interruptWriteMsg(&USART_h, "La escritura de comandos tiene el formato:\n");
+	interruptWriteMsg(&USART_h, "'Comando' 'Palabra' 'Número' 'Número' 'Número' + Enter\n\n");
+	imprimir_Ejemplos();
 	interruptWriteMsg(&USART_h, "Menú de comandos\n");
-	interruptWriteMsg(&USART_h, "1) help - Imprimir este menú\n");
-	interruptWriteMsg(&USART_h, "2) - Control 1 de MCO1 cambiar señal - Elige entre HSI, LSE o PLL\n");
-	interruptWriteMsg(&USART_h, "3) - Control 2 de MCO2 cambiar preescaler - Elige entre \n");
-	interruptWriteMsg(&USART_h, "4) - RTC 1\n");
-	interruptWriteMsg(&USART_h, "5) - RTC 2\n");
-	interruptWriteMsg(&USART_h, "6) - RTC 3\n");
-	interruptWriteMsg(&USART_h, "7) - RTC 4\n");
-	interruptWriteMsg(&USART_h, "8) - ADC 1\n");
-	interruptWriteMsg(&USART_h, "9) - ADC 2\n");
-	interruptWriteMsg(&USART_h, "10) - Acel 1\n");
-	interruptWriteMsg(&USART_h, "11) - Acel 2\n");
+	interruptWriteMsg(&USART_h, "1) ayuda - Imprimir este menú\n");
+	interruptWriteMsg(&USART_h, "2) relojMCO1 - Elige entre HSI, LSE o PLL.\n");
+	interruptWriteMsg(&USART_h, "3) prescalerMCO1 - Elige entre 2, 3, 4 o 5.\n");
+	interruptWriteMsg(&USART_h, "4) leerHora - Imprime la hora actual del sistema.\n");
+	interruptWriteMsg(&USART_h, "5) leerFecha - Imprime la fecha actual del sistema.\n");
+	interruptWriteMsg(&USART_h, "6) cambiarHora - Configurar hora a elección HH MM SS.\n");
+	interruptWriteMsg(&USART_h, "7) cambiarFecha - Configurar fecha a elección 'DIA DE LA SEMANA' DD MM YY.\n");
+	interruptWriteMsg(&USART_h, "8) calibrarFrec - Entra a menú de calibración de frecuencia del sistema.\n");
+	interruptWriteMsg(&USART_h, "9) velocidadADC - Elegir velocidad de muestreo ADC entre 800 y 1500 Hz.\n");
+	interruptWriteMsg(&USART_h, "10) iniciarADC - Inicia el muestreo de 256 datos.\n");
+	interruptWriteMsg(&USART_h, "11) capturarAXL - Inicia la captura de datos del acelerometro.\n");
+	interruptWriteMsg(&USART_h, "12) fourierAXL - Realiza la transformada rápida de fourier del acelerometro.\n");
+	interruptWriteMsg(&USART_h, "\tEs necesario capturarAXL antes de fourierAXL.\n");
+
+}
+
+void imprimir_Ejemplos(void){
+	interruptWriteMsg(&USART_h, "Ejemplos de comandos:\n");
+	interruptWriteMsg(&USART_h, "2) relojMCO1 LSE\n");
+	interruptWriteMsg(&USART_h, "3) prescalerMCO1 p 2\n");
+	interruptWriteMsg(&USART_h, "6) cambiarHora h 23 45 30\n");
+	interruptWriteMsg(&USART_h, "7) cambiarFecha Lunes 3 3 23\n\n");
+}
+
+
+void inicializacion_Sistema(void){
+	/* Activador coprocesador matemático - FPU */
+	SCB->CPACR |= (0xF << 20);
+
+	systemClock_100MHz(&PLL_h);
+	frecuencia = getPLL();
+
+	inicializacion_USART2();
+	inicializacion_USART6();
+
+	config_SysTick_ms(frecuencia);
+
+	/* Permitir la lectura de frecuencias a través de MCO1 */
+	PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
+
+	/* Configuración reloj */
+	RTC_config();
+
+	inicializacion_Led_Estado();
+	inicializacion_ADC();
+
+	/* PWM para muestreo */
+	inicializacion_Trigger_ADC();
+
+	inicializacion_I2C();
+	inicializacion_AXL345(&USART_h, &AXL345_h);
+	interruptWriteMsg(&USART_h, buffer_datos);
+	interruptWriteMsg(&USART_h, "Escriba \"ayuda\" para una guía del programa.\n");
 }
 
 /* Pin A5 y pin H0 */
@@ -427,7 +578,7 @@ void inicializacion_Led_Estado(void){
 
 	RCC->CR &= ~RCC_CR_HSEON;
 
-	// Timer para LEDs de estado usando el LED2 y pin H0
+	// Timer para LEDs de estado usando el LED2 y pin H1
 	timerLed.ptrTIMx = TIM2;
 	timerLed.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
 	timerLed.TIMx_Config.TIMx_speed = BTIMER_SPEED_100Mhz_100us;
@@ -452,6 +603,7 @@ void inicializacion_Led_Estado(void){
 	blinkyLedH1.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
 	GPIO_Config(&blinkyLedH1);
 
+	// Calibración de frecuencia inicial usando el osciloscopio
 	RCC->CR &= ~RCC_CR_HSITRIM;
 	RCC->CR |= (calib_Reloj & 0x1F) << RCC_CR_HSITRIM_Pos;
 }
@@ -513,7 +665,7 @@ void inicializacion_USART6(void){
 	USART_h.USART_Config.USART_stopbits = USART_STOPBIT_1;
 	USART_h.USART_Config.USART_enableIntRX = ENABLE;
 	USART_h.USART_Config.USART_enableIntTX = ENABLE;
-	USART_h.USART_Config.MCU_frequency = 100;
+	USART_h.USART_Config.MCU_frequency = frecuencia;
 	USART_Config(&USART_h);
 }
 
@@ -522,15 +674,13 @@ void inicializacion_ADC(void){
 	ADC_h.channel[0] = ADC_CHANNEL_0;
 	ADC_h.channel[1] = ADC_CHANNEL_1;
 	ADC_h.dataAlignment = ADC_ALIGNMENT_RIGHT;
-	ADC_h.resolution = ADC_RESOLUTION_10_BIT;
+	ADC_h.resolution = ADC_RESOLUTION_12_BIT;
 	ADC_h.samplingPeriod[0] = ADC_SAMPLING_PERIOD_480_CYCLES;
 	ADC_h.samplingPeriod[1] = ADC_SAMPLING_PERIOD_480_CYCLES;
 	adc_Config_MultiCH(&ADC_h, numero_De_Canales);
-
-	adc_ExternalTrig();
 }
 
-/* Pin B4 */
+/* Pin B4 - Timer que controla la velocidad de muestreo del ADC */
 void inicializacion_Trigger_ADC(void){
 	pinPWM_h.pGPIOx = GPIOB;
 	pinPWM_h.GPIO_PinConfig.GPIO_PinNumber = PIN_4;
@@ -547,5 +697,77 @@ void inicializacion_Trigger_ADC(void){
 	PWM_h.config.periodo = 66;
 	PWM_h.config.duttyCicle = 33;
 	pwm_Config(&PWM_h);
-//	startPwmSignal(&PWM_h);
+
+	adc_ExternalTrig();
 }
+
+void inicializacion_PWM_Prueba(void){
+	testPinPWM.pGPIOx = GPIOD;
+	testPinPWM.GPIO_PinConfig.GPIO_PinNumber = PIN_15;
+	testPinPWM.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
+	testPinPWM.GPIO_PinConfig.GPIO_PinOType = GPIO_OTYPE_PUSHPULL;
+	testPinPWM.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
+	testPinPWM.GPIO_PinConfig.GPIO_PinSpeed = GPIO_OSPEED_FAST;
+	testPinPWM.GPIO_PinConfig.GPIO_PinAltFunMode = AF2;
+	GPIO_Config(&testPinPWM);
+
+	testPWM.ptrTIMx = TIM4;
+	testPWM.config.channel = PWM_CHANNEL_4;
+	testPWM.config.prescaler = PWM_PRESCALER_100MHz_1us;
+	testPWM.config.periodo = 12500;
+	testPWM.config.duttyCicle = 500;
+	pwm_Config(&testPWM);
+	startPwmSignal(&testPWM);
+}
+
+void inicializacion_I2C(void){
+	// Timer 200 Hz
+	Timer200hz.ptrTIMx = TIM5;
+	Timer200hz.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
+	Timer200hz.TIMx_Config.TIMx_speed = BTIMER_SPEED_100Mhz_100us;
+	Timer200hz.TIMx_Config.TIMx_period = 50; // Tiempo en milisegundos
+	Timer200hz.TIMx_Config.TIMx_interruptEnable = ENABLE;
+	BasicTimer_Config(&Timer200hz);
+
+	//Configuración I2C
+	pinSCL_AXL345.pGPIOx                                    = GPIOB;
+	pinSCL_AXL345.GPIO_PinConfig.GPIO_PinNumber             = PIN_8;
+	pinSCL_AXL345.GPIO_PinConfig.GPIO_PinMode               = GPIO_MODE_ALTFN;
+	pinSCL_AXL345.GPIO_PinConfig.GPIO_PinOType              = GPIO_OTYPE_OPENDRAIN;
+	pinSCL_AXL345.GPIO_PinConfig.GPIO_PinPuPdControl        = GPIO_PUPDR_NOTHING;
+	pinSCL_AXL345.GPIO_PinConfig.GPIO_PinSpeed              = GPIO_OSPEED_FAST;
+	pinSCL_AXL345.GPIO_PinConfig.GPIO_PinAltFunMode         = AF4;
+	GPIO_Config(&pinSCL_AXL345);
+
+	pinSDA_AXL345.pGPIOx                                    = GPIOB;
+	pinSDA_AXL345.GPIO_PinConfig.GPIO_PinNumber             = PIN_9;
+	pinSDA_AXL345.GPIO_PinConfig.GPIO_PinMode               = GPIO_MODE_ALTFN;
+	pinSDA_AXL345.GPIO_PinConfig.GPIO_PinOType              = GPIO_OTYPE_OPENDRAIN;
+	pinSDA_AXL345.GPIO_PinConfig.GPIO_PinPuPdControl        = GPIO_PUPDR_NOTHING;
+	pinSDA_AXL345.GPIO_PinConfig.GPIO_PinSpeed              = GPIO_OSPEED_FAST;
+	pinSDA_AXL345.GPIO_PinConfig.GPIO_PinAltFunMode         = AF4;
+	GPIO_Config(&pinSDA_AXL345);
+
+	AXL345_h.ptrI2Cx       = I2C1;
+	AXL345_h.modeI2C       = I2C_MODE_FM;
+	AXL345_h.slaveAddress  = AXL345_ADDRESS;
+	AXL345_h.MCU_frequency = frecuencia;
+	i2c_config(&AXL345_h);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

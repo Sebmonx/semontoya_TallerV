@@ -54,7 +54,7 @@ GPIO_Handler_t pinSDA_AXL345 = {0};
 I2C_Handler_t AXL345 = {0};
 
 axis_Data_t datos_muestreo = {0};
-uint16_t posicion_muestreo = 0;
+uint16_t pos_Muestreo = 0;
 
 // Funciones de inicialización
 void inicializacion_Led_Estado(void);
@@ -66,9 +66,9 @@ int main(void)
 {
 	/* Activador coprocesador matemático - FPU */
 	SCB->CPACR |= (0xF << 20);
+
 	inicializacion_Led_Estado();
-	inicializ
-	acion_USART2();
+	inicializacion_USART2();
 	inicializacion_pines_I2C();
 	inicializacion_AXL345(&USART_handler, &AXL345);
 
@@ -84,26 +84,26 @@ int main(void)
 				data_recibida_USART = '\0';
 			}
 			else if(data_recibida_USART == 'x'){
-				single_data_X(&USART_handler, &AXL345, &datos_muestreo, posicion_muestreo);
+				single_data_X(&USART_handler, &AXL345, &datos_muestreo, pos_Muestreo);
 				data_recibida_USART = '\0';
 			}
 			else if(data_recibida_USART == 'y'){
-				single_data_Y(&USART_handler, &AXL345, &datos_muestreo, posicion_muestreo);
+				single_data_Y(&USART_handler, &AXL345, &datos_muestreo, pos_Muestreo);
 				data_recibida_USART = '\0';
 			}
 			else if(data_recibida_USART == 'z'){
-				single_data_Z(&USART_handler, &AXL345, &datos_muestreo, posicion_muestreo);
+				single_data_Z(&USART_handler, &AXL345, &datos_muestreo, pos_Muestreo);
 				data_recibida_USART = '\0';
 			}
 			else if(data_recibida_USART == 's'){
-				XYZ_dataset(&USART_handler,&AXL345, &datos_muestreo,posicion_muestreo);
-				print_XYZ_Data(&datos_muestreo, &USART_handler, posicion_muestreo);
+				XYZ_dataset(&USART_handler,&AXL345, &datos_muestreo,pos_Muestreo);
+				print_XYZ_Data(&datos_muestreo, &USART_handler, pos_Muestreo);
 				data_recibida_USART = '\0';
 			}
 			else if(data_recibida_USART == 't'){
-				float prueba = read_XYZ_data(&AXL345, &datos_muestreo);
-				sprintf(buffer_datos, "%.2f", prueba);
-				interruptWriteMsg(&USART_handler, buffer_datos);
+//				float prueba = read_XYZ_data(&AXL345, &datos_muestreo);
+//				sprintf(buffer_datos, "%.2f", prueba);
+//				interruptWriteMsg(&USART_handler, buffer_datos);
 				data_recibida_USART = '\0';
 			}
 		}
@@ -130,7 +130,7 @@ void inicializacion_Led_Estado(void){
 
 	RCC->CR &= ~RCC_CR_HSEON;
 
-	// Timer para LEDs de estado usando el LED2 y pin H0
+	// Timer para LEDs de estado usando el LED2 y pin H1
 	timerLed.ptrTIMx = TIM2;
 	timerLed.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
 	timerLed.TIMx_Config.TIMx_speed = BTIMER_SPEED_16Mhz_100us;
@@ -176,7 +176,7 @@ void inicializacion_USART2(void){
 	// Inicialización de módulo serial USART transmisión + recepción e interrupción RXTX
 	USART_handler.ptrUSARTx = USART2;
 	USART_handler.USART_Config.USART_mode = USART_MODE_RXTX;
-	USART_handler.USART_Config.USART_baudrate = USART_BAUDRATE_9600;
+	USART_handler.USART_Config.USART_baudrate = USART_BAUDRATE_115200;
 	USART_handler.USART_Config.USART_datasize = USART_DATASIZE_8BIT;
 	USART_handler.USART_Config.USART_parity = USART_PARITY_NONE;
 	USART_handler.USART_Config.USART_stopbits = USART_STOPBIT_1;
@@ -208,7 +208,7 @@ void inicializacion_pines_I2C(void){
 	GPIO_Config(&pinSDA_AXL345);
 
 	AXL345.ptrI2Cx       = I2C1;
-	AXL345.modeI2C       = I2C_MODE_SM;
+	AXL345.modeI2C       = I2C_MODE_FM;
 	AXL345.slaveAddress  = AXL345_ADDRESS;
 	AXL345.MCU_frequency = 16;
 	i2c_config(&AXL345);
