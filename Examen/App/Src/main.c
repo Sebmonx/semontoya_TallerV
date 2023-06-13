@@ -83,7 +83,7 @@ uint8_t calib_Reloj = 12;
 ADC_Config_t ADC_h = {0};
 uint16_t ADC_Data[2] = {0};
 uint16_t ADC_Data_CH0[256] = {0};
-uint8_t ADC_Data_CH1[256] = {0};
+uint16_t ADC_Data_CH1[256] = {0};
 uint16_t ADC_Contador = 0;
 uint8_t numero_De_Canales = 2;
 uint8_t ADC_Completo = 0;
@@ -142,10 +142,12 @@ int main(void)
     /* Loop forever */
 	while(1){
 		if(data_recibida_USART != '\0'){
+			/* Recepción de caracteres para construir comando */
 			interruptWriteChar(&USART_h, data_recibida_USART);
 			buffer_Recepcion[contador_Recepcion] = data_recibida_USART;
 			contador_Recepcion++;
 
+			/* Confirmación de envío de comando utilizando ENTER */
 			if(data_recibida_USART == '\r'){
 				buffer_Recepcion[contador_Recepcion -1] = '\0';
 				contador_Recepcion = 0;
@@ -179,6 +181,7 @@ void BasicTimer5_Callback(){
 		AXL_Capturar = 0;
 	}
 }
+
 //void callback_USART2_RX(void){
 //	data_recibida_USART = get_data_RX();
 //}cambio
@@ -187,6 +190,7 @@ void callback_USART6_RX(void){
 	data_recibida_USART = get_data_RX();
 }
 
+/* Alternar los arreglos de guardado de datos para cada canal */
 void adcComplete_Callback(void){
 	if(ADC_Completo == 0){
 		ADC_Data_CH0[ADC_Contador] = getADC();
@@ -208,7 +212,7 @@ void adcComplete_Callback(void){
 
 
 void chequear_Comando(char *ptrBuffer){
-
+	/* Guardado de datos y comando */
 	sscanf(ptrBuffer,"%s %s %u %u %u", cmd, userMsg,
 			&parametro_1, &parametro_2, &parametro_3);
 
@@ -268,6 +272,7 @@ void calculo_FFT(void){
 //
 //	arm_abs_f32(sineSignal, transformed, SINE_SIZE);
 
+	/* Inicialización FFT */
 	statusIntFFT = arm_rfft_fast_init_f32(&config_Rfft_fast_32,fftsize);
 
 	if(statusIntFFT == ARM_MATH_SUCCESS){
@@ -276,32 +281,39 @@ void calculo_FFT(void){
 		int i = 0;
 		int j = 0;
 
+		/* Condicional por si no se ha realizado la captura del acelerometro */
 		if(datos_FFT[0] == 0){
-			interruptWriteMsg(&USART_h, "Por favor ingresar datos.\n");
+			interruptWriteMsg(&USART_h, "Por favor ingresar datos con 'capturarAXL'.\n");
 		}
+		else {
 
-		arm_rfft_fast_f32(&config_Rfft_fast_32, datos_FFT, datosFFT_T, ifftFlag);
-		arm_abs_f32(datosFFT_T, datos_FFT, fftsize);
+			arm_rfft_fast_f32(&config_Rfft_fast_32, datos_FFT, datosFFT_T, ifftFlag);
+			arm_abs_f32(datosFFT_T, datos_FFT, fftsize);
 
-		for(i = 1; i < fftsize; i++){
-			if(i % 2){
-				sprintf(buffer_datos, "%u : %#.6f\n", j, 2*datos_FFT[i]);
-				interruptWriteMsg(&USART_h, buffer_datos);
-				j++;
+			for(i = 1; i < fftsize; i++){
+				if(i % 2){
+					sprintf(buffer_datos, "%#.6f\n", 2*datos_FFT[i]);
+					interruptWriteMsg(&USART_h, buffer_datos);
+					j++;
+				}
 			}
+			datos_FFT[0] = 0;
 		}
-		datos_FFT[0] = 0;
-
 	}
 	else {
 		interruptWriteMsg(&USART_h, "ERROR en inicialización.\n");
 	}
 }
+
 void inicio_CapturaAXL(void){
 	pos_Muestreo = 0;
 	AXL_Capturar = 1;
 	interruptWriteMsg(&USART_h, "Leyendo datos AXL...\n");
+
+	/* Atrapar el sistema solo en captura de datos */
 	while(AXL_Capturar == 1){
+
+		/* Lee datos cuando el timer 5 lo permite */
 		if(AXL_Recibir == 1){
 			read_Z_data(&AXL345_h, datos_EjeZ, pos_Muestreo);
 			datos_FFT[pos_Muestreo] = (float) datos_EjeZ[pos_Muestreo] * (0.0039*9.8);
@@ -318,12 +330,14 @@ void inicio_MuestreoADC(void){
 	ADC_Completo = 0;
 	startPwmSignal(&PWM_h);
 
+	/* Atrapa el sistema mientras captura los datos */
 	while(ADC_Completo != 2){
 		__NOP();
 	}
 	ADC_Contador = 0;
 
-
+	/* Impresión de cada arreglo de datos con delay para evitar
+	 * solapamiento por alta velocidad */
 	interruptWriteMsg(&USART_h, "Datos canal 0\n");
 	for(int i = 0; i < 256; i++){
 		sprintf(buffer_datos, "%d ; %d\n", (i+1), ADC_Data_CH0[i]);
@@ -339,7 +353,11 @@ void inicio_MuestreoADC(void){
 	}
 }
 
+
 void velocidad_MuestreoADC(void){
+
+	/* Se condiciona al usuario entre 800 y 1500 porque es la
+	 * frecuencia de la señal que desea muestrear */
 	parametro_1 = parametro_1 * 10;
 
 	if(8000 <= parametro_1  && parametro_1 <= 15000){
@@ -352,12 +370,14 @@ void velocidad_MuestreoADC(void){
 	}
 }
 
+/* Posibilidad de calibración manual de ciclos de reloj HSI */
 void calibrar_HSITRIM(void){
 	interruptWriteMsg(&USART_h, "Ajuste de frecuencia.\n");
 	interruptWriteMsg(&USART_h, "Para aumentar presione 'u'\n");
 	interruptWriteMsg(&USART_h, "Para disminuir presione 'd'\n");
 	interruptWriteMsg(&USART_h, "Para salir presione 's'\n");
 
+	/* Atrapa el sistema en el entorno de calibración */
 	while(strcasecmp(cmd, "calibrarFrec") == 0){
 
 		if(data_recibida_USART == 'u'){
@@ -393,6 +413,8 @@ void calibrar_HSITRIM(void){
 }
 
 void cambiar_Hora_RTC(void){
+	/* Condiciones de cambio de hora
+	 * Hora - Minutos - Segundos respectivamente */
 	if(parametro_1 < 24 && parametro_2 < 60 && parametro_3 < 60){
 		RTC_Time_Change(parametro_1, parametro_2, parametro_3);
 		leer_Hora_RTC();
@@ -404,6 +426,7 @@ void cambiar_Hora_RTC(void){
 
 void cambiar_Fecha_RTC(void){
 
+	/* "Traducción" de usuario a programa para día de la semana */
 	if(strcasecmp(userMsg, "lunes") == 0){
 		weekday = 1;
 	}
@@ -426,6 +449,8 @@ void cambiar_Fecha_RTC(void){
 		weekday = 7;
 	}
 
+	/* Condiciones de cambio de fecha
+	 * Mes - Día respectivamente*/
 	if(parametro_2 < 13 && parametro_1 < 32){
 		RTC_Date_Change(parametro_1, parametro_2, parametro_3, weekday);
 		leer_Fecha_RTC();
@@ -547,6 +572,8 @@ void inicializacion_Sistema(void){
 	/* Activador coprocesador matemático - FPU */
 	SCB->CPACR |= (0xF << 20);
 
+	/* Configuración reloj */
+	RTC_config();
 	systemClock_100MHz(&PLL_h);
 	frecuencia = getPLL();
 
@@ -557,9 +584,6 @@ void inicializacion_Sistema(void){
 
 	/* Permitir la lectura de frecuencias a través de MCO1 */
 	PLL_Frequency_Output(&MCO1_h, MCO1_clock, MCO1_prescaler);
-
-	/* Configuración reloj */
-	RTC_config();
 
 	inicializacion_Led_Estado();
 	inicializacion_ADC();
@@ -576,6 +600,7 @@ void inicializacion_Sistema(void){
 /* Pin A5 y pin H0 */
 void inicializacion_Led_Estado(void){
 
+	/* Asegurar apagado de HSE para usar pin H1 como salida */
 	RCC->CR &= ~RCC_CR_HSEON;
 
 	// Timer para LEDs de estado usando el LED2 y pin H1
@@ -603,7 +628,7 @@ void inicializacion_Led_Estado(void){
 	blinkyLedH1.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
 	GPIO_Config(&blinkyLedH1);
 
-	// Calibración de frecuencia inicial usando el osciloscopio
+	// Calibración de frecuencia inicial calibrada de osciloscopio
 	RCC->CR &= ~RCC_CR_HSITRIM;
 	RCC->CR |= (calib_Reloj & 0x1F) << RCC_CR_HSITRIM_Pos;
 }
@@ -698,27 +723,28 @@ void inicializacion_Trigger_ADC(void){
 	PWM_h.config.duttyCicle = 33;
 	pwm_Config(&PWM_h);
 
+	/* Función que enciende la activación externa del ADC */
 	adc_ExternalTrig();
 }
 
-void inicializacion_PWM_Prueba(void){
-	testPinPWM.pGPIOx = GPIOD;
-	testPinPWM.GPIO_PinConfig.GPIO_PinNumber = PIN_15;
-	testPinPWM.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
-	testPinPWM.GPIO_PinConfig.GPIO_PinOType = GPIO_OTYPE_PUSHPULL;
-	testPinPWM.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
-	testPinPWM.GPIO_PinConfig.GPIO_PinSpeed = GPIO_OSPEED_FAST;
-	testPinPWM.GPIO_PinConfig.GPIO_PinAltFunMode = AF2;
-	GPIO_Config(&testPinPWM);
-
-	testPWM.ptrTIMx = TIM4;
-	testPWM.config.channel = PWM_CHANNEL_4;
-	testPWM.config.prescaler = PWM_PRESCALER_100MHz_1us;
-	testPWM.config.periodo = 12500;
-	testPWM.config.duttyCicle = 500;
-	pwm_Config(&testPWM);
-	startPwmSignal(&testPWM);
-}
+//void inicializacion_PWM_Prueba(void){
+//	testPinPWM.pGPIOx = GPIOD;
+//	testPinPWM.GPIO_PinConfig.GPIO_PinNumber = PIN_15;
+//	testPinPWM.GPIO_PinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
+//	testPinPWM.GPIO_PinConfig.GPIO_PinOType = GPIO_OTYPE_PUSHPULL;
+//	testPinPWM.GPIO_PinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
+//	testPinPWM.GPIO_PinConfig.GPIO_PinSpeed = GPIO_OSPEED_FAST;
+//	testPinPWM.GPIO_PinConfig.GPIO_PinAltFunMode = AF2;
+//	GPIO_Config(&testPinPWM);
+//
+//	testPWM.ptrTIMx = TIM4;
+//	testPWM.config.channel = PWM_CHANNEL_4;
+//	testPWM.config.prescaler = PWM_PRESCALER_100MHz_1us;
+//	testPWM.config.periodo = 12500;
+//	testPWM.config.duttyCicle = 500;
+//	pwm_Config(&testPWM);
+//	startPwmSignal(&testPWM);
+//}
 
 void inicializacion_I2C(void){
 	// Timer 200 Hz

@@ -26,6 +26,7 @@ void RTC_config(void){
 	}
 
 	/* Elegir señal de reloj para RTC */
+	RCC->BDCR &= ~RCC_BDCR_RTCSEL;
 	RCC->BDCR |= RCC_BDCR_RTCSEL_0; // LSE
 
 	/* Encender periferico RTC */
@@ -49,8 +50,6 @@ void RTC_config(void){
 
 void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds){
 
-	/* Desactivar los registros oscuros */
-	RTC->CR |= RTC_CR_BYPSHAD;
 
 	/* Permitir modificación de valores en RTC */
 	RTC->ISR |= RTC_ISR_INIT;
@@ -59,6 +58,9 @@ void RTC_Time_Change(uint8_t hour, uint8_t minutes, uint8_t seconds){
 	while(!(RTC->ISR & RTC_ISR_INITF)){
 		__NOP();
 	}
+
+	/* Desactivar los registros oscuros */
+	RTC->CR |= RTC_CR_BYPSHAD;
 
 	/* Notación 24 horas */
 	RTC->CR &= ~RTC_CR_FMT;
