@@ -307,5 +307,13 @@ uint16_t dutty_calculation(PWM_Handler_t *PWM_handler, float data){
 	return newDutty;
 }
 
+void xclk_camara(PWM_Handler_t *ptrPWM){
 
+	/* Falta elegir timer y canal */
+	ptrPWM->config.prescaler = 0;
+	ptrPWM->config.periodo = 8;
+	ptrPWM->config.duttyCicle = 4;
+	pwm_Config(ptrPWM);
 
+	startPwmSignal(ptrPWM);
+}
