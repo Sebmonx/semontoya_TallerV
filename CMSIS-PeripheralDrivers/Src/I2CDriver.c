@@ -235,3 +235,5 @@ void i2c_writeSingleRegister(I2C_Handler_t *ptrHandlerI2C, uint8_t regToRead, ui
 	/* Enviar condición de parada */
 	i2c_stopTransaction(ptrHandlerI2C);
 }
+
+

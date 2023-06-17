@@ -48,10 +48,30 @@ typedef struct
 	BasicTimer_Config_t	TIMx_Config;
 }BasicTimer_Handler_t;
 
+
+/* Configuración para timer input capture */
+typedef struct
+{
+	uint8_t		TIMx_mode; 				// Up or dowm
+	uint32_t	TIMx_speed;				// A qué velocidad se incrementa el Timer
+	uint32_t	TIMx_period;			// Valor del periodo del Timer
+	uint8_t		TIMx_interruptEnable;	// Activa o desactiva el modo interrupción del timer.
+}ATimer_Config_t;
+
+/* Handler para el Timer*/
+typedef struct
+{
+	TIM_TypeDef			*ptrTIMx;
+	ATimer_Config_t		TIMx_Config;
+}ATimer_Handler_t;
+
 void BasicTimer_Config(BasicTimer_Handler_t *ptrBTimerHandler);
 void BasicTimer2_Callback(void); /* Esta función debe ser sobre-escrita en el main para que el sistema funcione*/
 void BasicTimer3_Callback(void);
 void BasicTimer4_Callback(void);
 void BasicTimer5_Callback(void);
+
+void timer1_config(BasicTimer_Handler_t *ptrBTimerHandler);
+
 
 #endif /* BASICTIMER_H_ */

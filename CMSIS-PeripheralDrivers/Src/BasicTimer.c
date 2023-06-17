@@ -175,3 +175,63 @@ void TIM5_IRQHandler(void){
 	BasicTimer5_Callback();		// Llamar funcion
 
 }
+
+
+/* Función para configurar el TIM1*/
+void timer1_config(BasicTimer_Handler_t *ptrBTimerHandler){
+	// Guardamos una referencia al periferico que estamos utilizando...
+	ptrTimerUsed = ptrBTimerHandler->ptrTIMx;
+
+	/* 0. Desactivamos las interrupciones globales mientras configuramos el sistema.*/
+	__disable_irq();
+
+	/* Señal de reloj */
+	RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+
+	/* Prescaler */
+	ptrBTimerHandler->ptrTIMx->PSC = ptrBTimerHandler->TIMx_Config.TIMx_speed;
+
+	/* Dirección del counter (up/down)*/
+	if(ptrBTimerHandler->TIMx_Config.TIMx_mode == BTIMER_MODE_UP){
+
+		/* 3a. Estamos en UP_Mode, el limite se carga en ARR y se comienza en 0 */
+		// Configurar el registro que nos controla el modo up or down
+		ptrBTimerHandler->ptrTIMx->CR1 &= ~TIM_CR1_DIR;
+
+		/* 3b. Configuramos el Auto-reload. Este es el "limite" hasta donde el CNT va a contar */
+		ptrBTimerHandler->ptrTIMx->ARR = ptrBTimerHandler->TIMx_Config.TIMx_period - 1;
+
+		/* 3c. Reiniciamos el registro counter*/
+		ptrBTimerHandler->ptrTIMx->CNT = RESET;
+
+	}else {
+		/* 3a. Estamos en DOWN_Mode, el limite se carga en ARR (0) y se comienza en un valor alto
+		 * Trabaja contando en direccion descendente*/
+		ptrBTimerHandler->ptrTIMx->CR1 &= ~TIM_CR1_DIR;
+		ptrBTimerHandler->ptrTIMx->CR1 |= TIM_CR1_DIR;
+
+		/* 3b. Configuramos el Auto-reload. Este es el "limite" hasta donde el CNT va a contar
+		 * En modo descendente, con numero positivos, cual es el minimo valor al que ARR puede llegar*/
+		ptrBTimerHandler->ptrTIMx->ARR = ptrBTimerHandler->TIMx_Config.TIMx_period - 1;
+
+		/* 3c. Reiniciamos el registro counter
+		 * Este es el valor con el que el counter comienza */
+		ptrBTimerHandler->ptrTIMx->CNT = ptrBTimerHandler->TIMx_Config.TIMx_period - 1;
+	}
+
+	/* 4. Activamos el Timer (el CNT debe comenzar a contar*/
+	ptrBTimerHandler->ptrTIMx->CR1 |= TIM_CR1_CEN;
+
+	/* 5. Activamos la interrupción debida al Timerx Utilizado
+	 * Modificar el registro encargado de activar la interrupcion generada por el TIMx*/
+	if(ptrBTimerHandler->TIMx_Config.TIMx_interruptEnable == 1){
+		ptrBTimerHandler->ptrTIMx->DIER |= TIM_DIER_UIE;
+	}
+	else {
+		ptrBTimerHandler->ptrTIMx->DIER &= ~TIM_DIER_UIE;
+	}
+
+	__NVIC_EnableIRQ(TIM1_CC_IRQn);
+
+	__enable_irq();
+}

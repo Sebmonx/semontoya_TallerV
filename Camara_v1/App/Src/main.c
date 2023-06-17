@@ -51,6 +51,9 @@ GPIO_Handler_t cam_SDA = {0};
 PLL_Config_t PLL_h = {0};
 GPIO_Handler_t MCO_h = {0};
 
+// Timer para dma
+BasicTimer_Handler_t T2_h;
+PWM_Handler_t T3_h;
 
 
 void inicializacion_Led_Estado(void);
@@ -66,11 +69,9 @@ int main(void)
 	systemClock_100MHz(&PLL_h);
 	PLL_Frequency_Output(&MCO_h, PLL_CLOCK, 5);
 	inicializacion_Led_Estado();
-	inicializacion_xclk();
+	inicializacion_camI2C();
+	inicializacion_xclk(); // Pwm para entregar señal de reloj
 	config_SysTick_ms(100);
-
-
-
 
 
 
@@ -163,6 +164,75 @@ void inicializacion_camI2C(void){
 
 }
 
+void T1_init(void){
+	// Señal de reloj
+	RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;
+
+	TIM1->PSC = 0; // Prescaler
+	TIM1->CR1 &= ~TIM_CR1_DIR; // Dirección de conteo
+	TIM1->ARR = 65535; // Período
+//	TIM1->CR1 &= ~TIM_CR1_CKD; // División de reloj entre timer y filtros de sampling
+//	TIM1->RCR &= ~TIM_RCR_REP; // Genera un evento al terminar el conteo
+
+	/* Modo slave */
+	TIM1->SMCR |= 0b100 << TIM_SMCR_SMS_Pos; // Activar el modo reset
+	TIM1->SMCR |= 0b101 << TIM_SMCR_TS_Pos; // Selecciona la entrada del timer que se sincroniza con el counter
+
+	/* Modo maestro */
+	TIM1->CR2 &= ~TIM_CR2_MMS;
+	TIM1->SMCR |= TIM_SMCR_MSM;
+
+	/* Configuración de modo entrada */
+	TIM1->CCER &= ~TIM_CCER_CC1P;
+	TIM1->CCMR1 |= 0b01 << TIM_CCMR1_CC1S_Pos;
+	TIM1->CCMR1 &= ~TIM_CCMR1_IC1PSC;
+}
+
+void T2_init(void){
+	// Timer para LEDs de estado usando el LED2
+	T2_h.ptrTIMx = TIM2;
+	T2_h.TIMx_Config.TIMx_mode	= BTIMER_MODE_UP;
+	T2_h.TIMx_Config.TIMx_speed = 0;
+	T2_h.TIMx_Config.TIMx_period = 4294967295; // Tiempo en milisegundos
+	BasicTimer_Config(&T2_h);
+
+	/* Modo slave */
+	TIM2->SMCR |= 0b111 << TIM_SMCR_SMS_Pos;
+	TIM2->SMCR &= ~TIM_SMCR_TS;
+
+	/* Modo maestro */
+	TIM2->CR2 &= ~TIM_CR2_MMS;
+	TIM2->SMCR &= ~TIM_SMCR_MSM;
+
+	/* Modo entrada */
+	TIM2->CCER |= 0b01 << TIM_CCER_CC1P_Pos;
+	TIM2->CCMR1 |= 0b01 << TIM_CCMR1_CC1S_Pos;
+	TIM2->CCMR1 &= ~TIM_CCMR1_IC1PSC;
+}
+
+/* Valio madre porque ya habia otra mas mejor */
+void T3_init(void){
+	// Señal de reloj
+	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+
+	TIM3->PSC = 0; // Prescaler
+	TIM3->CR1 &= ~TIM_CR1_DIR; // Dirección de conteo
+	TIM3->ARR = 7; // Período
+//	TIM3->CR1 &= ~TIM_CR1_CKD; // División de reloj entre timer y filtros de sampling
+//	TIM3->RCR &= ~TIM_RCR_REP; // Genera un evento al terminar el conteo
+
+	/* Modo maestro */
+	TIM3->CR2 &= ~TIM_CR2_MMS;
+	TIM3->SMCR &= ~TIM_SMCR_MSM;
+
+	/* Configuración de modo pwm */
+	TIM3->CCMR1 |= 0b110 << TIM_CCMR1_OC1M_Pos;
+	TIM3->CCR1 = 5;
+	TIM3->CCER &= ~TIM_CCER_CC1P;
+	TIM3->CCMR1 |= TIM_CCMR1_OC1FE;
+	TIM3->CCER |= TIM_CCER_CC1E;
+
+}
 
 
 
