@@ -5,16 +5,16 @@
  *      Author: ingfisica
  */
 
-#ifndef INC_FUNCIONES_H_
-#define INC_FUNCIONES_H_
+#ifndef FUNCIONES_H_
+#define FUNCIONES_H_
 
 #include <stdio.h>
 #include <string.h>
 #include "stm32f7xx_hal.h"
-#include "ov7670.h"
-#include "ov7670Reg.h"
+//#include "ov7670.h"
+//#include "ov7670Reg.h"
 
 void Led_estado(GPIO_TypeDef *pGPIO, uint16_t pPIN);
 
 
-#endif /* INC_FUNCIONES_H_ */
+#endif /* FUNCIONES_H_ */

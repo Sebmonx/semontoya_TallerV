@@ -6,7 +6,7 @@
  *
  */
 #include "Funciones.h"
-
+#include "main.h"
 
 HAL_StatusTypeDef HAL_check; // Chequeo de funcionamiento función HAL
 uint8_t pickLed = 0;
@@ -54,5 +54,15 @@ uint8_t ov7670_read(I2C_HandleTypeDef *phi2c, uint8_t regADDR, uint8_t *readData
 
 uint8_t ov7670_init(DCMI_HandleTypeDef *phdcmi, DMA_HandleTypeDef *phdma, I2C_HandleTypeDef *phi2c){
 
+	HAL_GPIO_WritePin(Cam_RESET_GPIO_Port, Cam_RESET_Pin, GPIO_PIN_RESET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(Cam_RESET_GPIO_Port, Cam_RESET_Pin, GPIO_PIN_SET);
+	HAL_Delay(100);
 
+	ov7670_write(0x12, 0x80);  // RESET
+	HAL_Delay(30);
+
+	uint8_t buffer[4];
+	ov7670_read(0x0b, buffer);
+	HAL_UART_Transmit_IT(&huart3, (uint8_t *)"[OV7670] dev id = %02X\n", buffer[0]);
 }

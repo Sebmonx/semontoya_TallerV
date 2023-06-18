@@ -6,11 +6,8 @@
  */
 #include <stdio.h>
 #include "main.h"
-#include "stm32f4xx_hal.h"
-#include "common.h"
 #include "ov7670.h"
-#include "ov7670Config.h"
-#include "ov7670Reg.h"
+//#include "ov7670Reg.h"
 
 /*** Internal Const Values, Macros ***/
 #define OV7670_QVGA_WIDTH  320
