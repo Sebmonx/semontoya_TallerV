@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "string.h"
 #include "stdio.h"
+#include "Funciones.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,9 +60,11 @@ uint16_t time_val = 0;
 uint8_t data_Reception = 0;
 char data_Buffer[64] = {0};
 
-char uart_buffer[20];
+char uart_buffer[64];
 uint8_t i2c_buffer;
 uint16_t data_i2c[20];
+
+uint8_t pickLed1 = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -87,9 +90,24 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim == &htim2){
-		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+		switch (pickLed1) {
+			case 0:
+				HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+				pickLed1++;
+				break;
+
+			case 1:
+				HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+				pickLed1++;
+				break;
+
+			case 2:
+				HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+				pickLed1 = 0;
+				break;
+			default:
+				break;
+		}
 	}
 }
 
@@ -129,9 +147,19 @@ int main(void)
   MX_DMA_Init();
   MX_DCMI_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start_IT(&htim2);
-  HAL_UART_Receive_IT(&huart3, &data_Reception, 1);
-  HAL_StatusTypeDef ret;
+  HAL_TIM_Base_Start_IT(&htim2); /* Inicio led estado internos */
+  HAL_UART_Receive_IT(&huart3, &data_Reception, 1); /* Inicializacion RX IT */
+
+  HAL_StatusTypeDef ret; // Variable para probar funciones
+
+  ret = ov7670_init(&hdcmi, &hdma_dcmi, &huart3, &hi2c2);
+  while(ret != HAL_OK);
+
+  /* Imprimir cosas */
+  strcpy(uart_buffer, "Inicialización completa.\n");
+  HAL_UART_Transmit(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer), 10);
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -140,32 +168,19 @@ int main(void)
   {
 	  if(data_Reception != '\0'){
 		 if(data_Reception == 'a'){
-			HAL_UART_Transmit_IT(&huart3,(uint8_t *) "FUNCIONA\n", strlen("FUNCIONA\n"));
-			ret = HAL_I2C_Mem_Write(&hi2c2, AXL345, 0x00, 1, &i2c_buffer, 1, 50);
 
-			if(ret != HAL_OK){
-				strcpy(uart_buffer, "I2C Tx fallo\n");
-			}
-			else {
-				ret = HAL_I2C_Mem_Read(&hi2c2, (AXL345 | 0x01), 0x00, 1, &i2c_buffer, 1, 50);
-				if(ret != HAL_OK){
-					strcpy(uart_buffer, "I2C Rx fallo\n");
-				}
-				else {
-					sprintf(uart_buffer, "Valor AXL: %u\n", i2c_buffer);
-				}
 
 			}
 
 			HAL_UART_Transmit_IT(&huart3, (uint8_t*)uart_buffer, strlen(uart_buffer));
 		 }
 		 data_Reception = '\0';
-	  }
+  }
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+
   /* USER CODE END 3 */
 }
 
@@ -328,9 +343,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 10000-1;
+  htim2.Init.Prescaler = 9600-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 25000-1;
+  htim2.Init.Period = 250-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -438,6 +453,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USER_Btn_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PF9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF9_TIM14;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pins : RMII_MDC_Pin RMII_RXD0_Pin */
   GPIO_InitStruct.Pin = RMII_MDC_Pin|RMII_RXD0_Pin;

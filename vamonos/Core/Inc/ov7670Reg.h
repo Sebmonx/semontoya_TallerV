@@ -5,8 +5,8 @@
  *      Author: take-iwiw
  */
 
-#ifndef OV7670_OV7670REG_H_
-#define OV7670_OV7670REG_H_
+#ifndef OV7670REG_H_
+#define OV7670REG_H_
 
 #define REG_BATT 0xFF
 
@@ -524,4 +524,4 @@ const uint8_t regCfg[][2] = {
 };
 
 
-#endif /* OV7670_OV7670REG_H_ */
+#endif /* OV7670REG_H_ */
