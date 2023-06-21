@@ -75,6 +75,14 @@ uint8_t ov7670_init(DCMI_HandleTypeDef *phdcmi, DMA_HandleTypeDef *phdma,
 
 	ov7670_reset(phi2c);
 
+//	ov7670_write(phi2c, REG_COM6, REG_HREF);
+	ov7670_write(phi2c, 0x17, 0x17);
+	ov7670_write(phi2c, 0x18, 0x05);
+	ov7670_write(phi2c, 0x03, 0x0A);
+	ov7670_write(phi2c, 0x19, 0x02);
+	ov7670_write(phi2c, 0x1A, 0x7A);
+
+
 	/* Confirmar interacción */
 	uint8_t buffer[4];
 	ov7670_read(phi2c, REG_VER, buffer);
@@ -91,16 +99,212 @@ uint8_t ov7670_init(DCMI_HandleTypeDef *phdcmi, DMA_HandleTypeDef *phdma,
 	return HAL_OK;
 }
 
-//uint8_t ov7670_config(void){
-//
-//}
 
 //uint8_t ov7670_StartCap(uint32_t direccionDestino){
 ////	HAL_check = HAL_DCMI_Start_DMA(pFlash, DCMI_MODE_SNAPSHOT, direccionDestino, Length);
 ////	return HAL_check;
 //}
 
-void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *phdcmi){
+//void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *phdcmi){
 //	HAL_check = HAL_DMA_Start_IT(phdcmi->DMA_Handle, (uint32_t) &phdcmi->Instance->DR,
 //			/* memoria de destino */, /*Longitud de los datos*/);
+//}
+
+void ov7670_output_format(I2C_HandleTypeDef *phi2c, UART_HandleTypeDef *phuart, uint8_t formato){
+	switch (formato) {
+		case RAW_RGB_VGA:
+			HAL_check = ov7670_write(phi2c, REG_CLKRC, 0x01);
+			HAL_check |= ov7670_write(phi2c, REG_COM7, 0x01);
+			HAL_check |= ov7670_write(phi2c, REG_COM3, 0x00);
+			HAL_check |= ov7670_write(phi2c, REG_COM14, 0x00);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_XSC, 0x3A);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_YSC, 0x35);
+			HAL_check |= ov7670_write(phi2c, 0x72, 0x11);
+			HAL_check |= ov7670_write(phi2c, 0x73, 0xF0);
+			HAL_check |= ov7670_write(phi2c, 0xA2, 0x02);
+
+			if(HAL_check != HAL_OK){
+				sprintf(uart_buffer, "Fallo en una escritura.\n");
+			}
+			else {
+				sprintf(uart_buffer,"Raw RGB VGA configurado\n");
+			}
+			HAL_UART_Transmit(phuart, (uint8_t *)uart_buffer, strlen(uart_buffer), 10);
+			break;
+
+		case PROC_RGB_QVGA:
+			HAL_check = ov7670_write(phi2c, REG_CLKRC, 0x01);
+			HAL_check |= ov7670_write(phi2c, REG_COM7, 0x11);
+			HAL_check |= ov7670_write(phi2c, REG_COM3, 0x04);
+			HAL_check |= ov7670_write(phi2c, REG_COM14, 0x1A);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_XSC, 0x3A);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_YSC, 0x35);
+			HAL_check |= ov7670_write(phi2c, 0x72, 0x11);
+			HAL_check |= ov7670_write(phi2c, 0x73, 0xF9);
+			HAL_check |= ov7670_write(phi2c, 0xA2, 0x02);
+
+			if(HAL_check != HAL_OK){
+				sprintf(uart_buffer, "Fallo en una escritura.\n");
+			}
+			else {
+				sprintf(uart_buffer,"Processed RGB QVGA configurado\n");
+			}
+			HAL_UART_Transmit(phuart, (uint8_t *)uart_buffer, strlen(uart_buffer), 10);
+			break;
+
+//		case PROC_RGB_VGA:
+//			HAL_check = ov7670_write(phi2c, REG_CLKRC, 0x01);
+//			HAL_check |= ov7670_write(phi2c, REG_COM7, 0x11);
+//			HAL_check |= ov7670_write(phi2c, REG_COM3, 0x04);
+//			HAL_check |= ov7670_write(phi2c, REG_COM14, 0x1A);
+//			HAL_check |= ov7670_write(phi2c, REG_SCALING_XSC, 0x3A);
+//			HAL_check |= ov7670_write(phi2c, REG_SCALING_YSC, 0x35);
+//			HAL_check |= ov7670_write(phi2c, 0x72, 0x11);
+//			HAL_check |= ov7670_write(phi2c, 0x73, 0xF9);
+//			HAL_check |= ov7670_write(phi2c, 0xA2, 0x02);
+//
+//			if(HAL_check != HAL_OK){
+//				sprintf(uart_buffer, "Fallo en una escritura.\n");
+//			}
+//			else {
+//				sprintf(uart_buffer,"Processed RGB VGA configurado\n");
+//			}
+//			HAL_UART_Transmit(phuart, (uint8_t *)uart_buffer, strlen(uart_buffer), 10);
+//			break;
+
+		case YUV_VGA:
+			HAL_check = ov7670_write(phi2c, REG_CLKRC, 0x01);
+			HAL_check |= ov7670_write(phi2c, REG_COM7, 0x00);
+			HAL_check |= ov7670_write(phi2c, REG_COM3, 0x00);
+			HAL_check |= ov7670_write(phi2c, REG_COM14, 0x00);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_XSC, 0x3A);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_YSC, 0x35);
+			HAL_check |= ov7670_write(phi2c, 0x72, 0x11);
+			HAL_check |= ov7670_write(phi2c, 0x73, 0xF0);
+			HAL_check |= ov7670_write(phi2c, 0xA2, 0x02);
+
+			if(HAL_check != HAL_OK){
+				sprintf(uart_buffer, "Fallo en una escritura.\n");
+			}
+			else {
+				sprintf(uart_buffer,"YUV VGA configurado\n");
+			}
+			HAL_UART_Transmit(phuart, (uint8_t *)uart_buffer, strlen(uart_buffer), 10);
+			break;
+
+		case YUV_QVGA:
+			HAL_check = ov7670_write(phi2c, REG_CLKRC, 0x01);
+			HAL_check |= ov7670_write(phi2c, REG_COM7, 0x00);
+			HAL_check |= ov7670_write(phi2c, REG_COM3, 0x04);
+			HAL_check |= ov7670_write(phi2c, REG_COM14, 0x19);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_XSC, 0x3A);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_YSC, 0x35);
+			HAL_check |= ov7670_write(phi2c, 0x72, 0x11);
+			HAL_check |= ov7670_write(phi2c, 0x73, 0xF1);
+			HAL_check |= ov7670_write(phi2c, 0xA2, 0x02);
+
+			if(HAL_check != HAL_OK){
+				sprintf(uart_buffer, "Fallo en una escritura.\n");
+			}
+			else {
+				sprintf(uart_buffer,"YUV QVGA configurado\n");
+			}
+			HAL_UART_Transmit(phuart, (uint8_t *)uart_buffer, strlen(uart_buffer), 10);
+			break;
+
+		case YUV_QQVGA:
+			HAL_check = ov7670_write(phi2c, REG_CLKRC, 0x01);
+			HAL_check |= ov7670_write(phi2c, REG_COM7, 0x00);
+			HAL_check |= ov7670_write(phi2c, REG_COM3, 0x04);
+			HAL_check |= ov7670_write(phi2c, REG_COM14, 0x1A);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_XSC, 0x3A);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_YSC, 0x35);
+			HAL_check |= ov7670_write(phi2c, 0x72, 0x22);
+			HAL_check |= ov7670_write(phi2c, 0x73, 0xF2);
+			HAL_check |= ov7670_write(phi2c, 0xA2, 0x02);
+
+			if(HAL_check != HAL_OK){
+				sprintf(uart_buffer, "Fallo en una escritura.\n");
+			}
+			else {
+				sprintf(uart_buffer,"YUV QQVGA configurado\n");
+			}
+			HAL_UART_Transmit(phuart, (uint8_t *)uart_buffer, strlen(uart_buffer), 10);
+			break;
+
+		case YUV_CIF:
+			HAL_check = ov7670_write(phi2c, REG_CLKRC, 0x01);
+			HAL_check |= ov7670_write(phi2c, REG_COM7, 0x00);
+			HAL_check |= ov7670_write(phi2c, REG_COM3, 0x08);
+			HAL_check |= ov7670_write(phi2c, REG_COM14, 0x11);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_XSC, 0x3A);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_YSC, 0x35);
+			HAL_check |= ov7670_write(phi2c, 0x72, 0x11);
+			HAL_check |= ov7670_write(phi2c, 0x73, 0xF1);
+			HAL_check |= ov7670_write(phi2c, 0xA2, 0x02);
+
+			if(HAL_check != HAL_OK){
+				sprintf(uart_buffer, "Fallo en una escritura.\n");
+			}
+			else {
+				sprintf(uart_buffer,"YUV CIF configurado\n");
+			}
+			HAL_UART_Transmit(phuart, (uint8_t *)uart_buffer, strlen(uart_buffer), 10);
+			break;
+
+		case YUV_QCIF:
+			HAL_check = ov7670_write(phi2c, REG_CLKRC, 0x01);
+			HAL_check |= ov7670_write(phi2c, REG_COM7, 0x00);
+			HAL_check |= ov7670_write(phi2c, REG_COM3, 0x0C);
+			HAL_check |= ov7670_write(phi2c, REG_COM14, 0x11);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_XSC, 0x3A);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_YSC, 0x35);
+			HAL_check |= ov7670_write(phi2c, 0x72, 0x11);
+			HAL_check |= ov7670_write(phi2c, 0x73, 0xF1);
+			HAL_check |= ov7670_write(phi2c, 0xA2, 0x52);
+
+			if(HAL_check != HAL_OK){
+				sprintf(uart_buffer, "Fallo en una escritura.\n");
+			}
+			else {
+				sprintf(uart_buffer,"YUV QCIF configurado\n");
+			}
+			HAL_UART_Transmit(phuart, (uint8_t *)uart_buffer, strlen(uart_buffer), 10);			break;
+			break;
+
+		case YUV_QQCIF:
+			HAL_check = ov7670_write(phi2c, REG_CLKRC, 0x01);
+			HAL_check |= ov7670_write(phi2c, REG_COM7, 0x00);
+			HAL_check |= ov7670_write(phi2c, REG_COM3, 0x0C);
+			HAL_check |= ov7670_write(phi2c, REG_COM14, 0x12);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_XSC, 0x3A);
+			HAL_check |= ov7670_write(phi2c, REG_SCALING_YSC, 0x35);
+			HAL_check |= ov7670_write(phi2c, 0x72, 0x22);
+			HAL_check |= ov7670_write(phi2c, 0x73, 0xF2);
+			HAL_check |= ov7670_write(phi2c, 0xA2, 0x2A);
+
+			if(HAL_check != HAL_OK){
+				sprintf(uart_buffer, "Fallo en una escritura.\n");
+			}
+			else {
+				sprintf(uart_buffer,"YUV QQCIF configurado\n");
+			}
+			HAL_UART_Transmit(phuart, (uint8_t *)uart_buffer, strlen(uart_buffer), 10);
+			break;
+
+		default:
+			sprintf(uart_buffer,"Algo pasó\n");
+
+			break;
+	}
 }
+
+
+
+
+
+
+
+
+
+

@@ -27,4 +27,5 @@ uint8_t ov7670_init(DCMI_HandleTypeDef *phdcmi, DMA_HandleTypeDef *phdma,
 					UART_HandleTypeDef *phuart, I2C_HandleTypeDef *phi2c);
 uint8_t ov7670_StartCap(uint32_t direccionDestino);
 void ov7670_reset(I2C_HandleTypeDef *phi2c);
+void ov7670_output_format(I2C_HandleTypeDef *phi2c, UART_HandleTypeDef *phuart, uint8_t formato);
 #endif /* FUNCIONES_H_ */

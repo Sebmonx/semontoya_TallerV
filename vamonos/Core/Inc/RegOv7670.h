@@ -180,5 +180,19 @@
 #define REG_HAECC7	0xaa	/* Hist AEC/AGC control 7 */
 #define REG_BD60MAX	0xab	/* 60hz banding step limit */
 
+#define RAW_RGB_VGA 	0
+#define PROC_RGB_QVGA 	1
+#define PROC_RGB_VGA 	2
+#define YUV_VGA			3
+#define YUV_QVGA 		4
+#define YUV_QQVGA 		5
+#define YUV_CIF			6
+#define YUV_QCIF 		7
+#define YUV_QQCIF 		8
+
+
+
+
+
 
 #endif /* OV7670_H */

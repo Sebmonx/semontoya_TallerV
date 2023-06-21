@@ -65,6 +65,8 @@ uint8_t i2c_buffer;
 uint16_t data_i2c[20];
 
 uint8_t pickLed1 = 0;
+
+uint8_t pruebaDMA[680*480] = {0};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -109,6 +111,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 				break;
 		}
 	}
+}
+
+void HAL_DCMI_LineEventCallback(DCMI_HandleTypeDef *hdcmi){
+	sprintf(uart_buffer, "Linea!");
+	HAL_UART_Transmit(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer), 10);
+}
+
+
+void HAL_DCMI_VsyncEventCallback(DCMI_HandleTypeDef *hdcmi){
+	sprintf(uart_buffer, "Vsync!");
+	HAL_UART_Transmit(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer), 10);
+}
+
+void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi){
+	sprintf(uart_buffer, "Frame!");
+	HAL_UART_Transmit(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer), 10);
 }
 
 /* USER CODE END 0 */
@@ -168,12 +186,21 @@ int main(void)
   {
 	  if(data_Reception != '\0'){
 		 if(data_Reception == 'a'){
+//			 strcpy(uart_buffer, "Test.\n");
+			 ret = HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, (uint32_t)&pruebaDMA, (640*480)/2);
 
-
+			if(ret == HAL_OK){
+				strcpy(uart_buffer, "DCMI good.\n");
+			}
+			else {
+				strcpy(uart_buffer, "No hizo cosas.\n");
 			}
 
-			HAL_UART_Transmit_IT(&huart3, (uint8_t*)uart_buffer, strlen(uart_buffer));
+			 HAL_UART_Transmit(&huart3, (uint8_t*)uart_buffer, strlen(uart_buffer),100);
 		 }
+
+
+	 }
 		 data_Reception = '\0';
   }
 
@@ -257,8 +284,8 @@ static void MX_DCMI_Init(void)
   hdcmi.Instance = DCMI;
   hdcmi.Init.SynchroMode = DCMI_SYNCHRO_HARDWARE;
   hdcmi.Init.PCKPolarity = DCMI_PCKPOLARITY_RISING;
-  hdcmi.Init.VSPolarity = DCMI_VSPOLARITY_HIGH;
-  hdcmi.Init.HSPolarity = DCMI_HSPOLARITY_LOW;
+  hdcmi.Init.VSPolarity = DCMI_VSPOLARITY_LOW;
+  hdcmi.Init.HSPolarity = DCMI_HSPOLARITY_HIGH;
   hdcmi.Init.CaptureRate = DCMI_CR_ALL_FRAME;
   hdcmi.Init.ExtendedDataMode = DCMI_EXTEND_DATA_8B;
   hdcmi.Init.JPEGMode = DCMI_JPEG_DISABLE;
@@ -345,7 +372,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 9600-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 250-1;
+  htim2.Init.Period = 2500-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
