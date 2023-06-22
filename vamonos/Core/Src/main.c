@@ -54,6 +54,7 @@ I2C_HandleTypeDef hi2c2;
 TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
 uint16_t time_val = 0;
@@ -65,8 +66,9 @@ uint8_t i2c_buffer;
 uint16_t data_i2c[20];
 
 uint8_t pickLed1 = 0;
-
-uint8_t pruebaDMA[680*480] = {0};
+#define SIZE ((640*480)/4)
+uint32_t pruebaDMA[60000] = {0};
+uint8_t capturando = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -90,6 +92,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 
 }
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim == &htim2){
 		switch (pickLed1) {
@@ -113,22 +116,29 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	}
 }
 
-void HAL_DCMI_LineEventCallback(DCMI_HandleTypeDef *hdcmi){
-	sprintf(uart_buffer, "Linea!");
-	HAL_UART_Transmit(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer), 10);
-}
 
-
-void HAL_DCMI_VsyncEventCallback(DCMI_HandleTypeDef *hdcmi){
-	sprintf(uart_buffer, "Vsync!");
-	HAL_UART_Transmit(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer), 10);
-}
-
+//void HAL_DCMI_LineEventCallback(DCMI_HandleTypeDef *hdcmi){
+//	sprintf(uart_buffer, "Linea!");
+//	HAL_UART_Transmit_IT(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer));
+//}
+//
+//
+//void HAL_DCMI_VsyncEventCallback(DCMI_HandleTypeDef *hdcmi){
+//	sprintf(uart_buffer, "Vsync!");
+//	HAL_UART_Transmit(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer), 10);
+//}
+//
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi){
+	capturando = 0;
+	HAL_DCMI_Stop(&hdcmi);
 	sprintf(uart_buffer, "Frame!");
 	HAL_UART_Transmit(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer), 10);
 }
 
+void HAL_DCMI_ErrorCallback(DCMI_HandleTypeDef *hdcmi){
+	sprintf(uart_buffer, "Error DCMI!");
+	HAL_UART_Transmit(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer), 100);
+}
 /* USER CODE END 0 */
 
 /**
@@ -177,7 +187,6 @@ int main(void)
   strcpy(uart_buffer, "Inicialización completa.\n");
   HAL_UART_Transmit(&huart3, (uint8_t*) uart_buffer, strlen(uart_buffer), 10);
 
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -187,21 +196,41 @@ int main(void)
 	  if(data_Reception != '\0'){
 		 if(data_Reception == 'a'){
 //			 strcpy(uart_buffer, "Test.\n");
-			 ret = HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, (uint32_t)&pruebaDMA, (640*480)/2);
+			 ret = HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, (uint32_t)pruebaDMA, 60000);
 
 			if(ret == HAL_OK){
+				capturando = 1;
 				strcpy(uart_buffer, "DCMI good.\n");
+				while(capturando == 1);
+
 			}
 			else {
+				capturando = 0;
 				strcpy(uart_buffer, "No hizo cosas.\n");
 			}
 
-			 HAL_UART_Transmit(&huart3, (uint8_t*)uart_buffer, strlen(uart_buffer),100);
+			HAL_UART_Transmit(&huart3, (uint8_t*)uart_buffer, strlen(uart_buffer),100);
+			data_Reception = '\0';
 		 }
 
+		 if(data_Reception == 'b'){
+			 data_Reception = '\0';
+			 for(uint32_t i = 0; i < 60000; i++){
+				 char buff[4];
+				 for(int j = 3; j >= 0; j--){
+					 buff[j] = (0xFF) & (pruebaDMA[i] >> (8 * j));
+				 }
+				 HAL_UART_Transmit(&huart3, (uint8_t*)buff, sizeof(buff), 100);
+			 }
+		 }
 
+		 if(data_Reception == 'c'){
+		 		uint8_t buff[4] = {1,2,3,4};
+		 		HAL_UART_Transmit(&huart3, (uint8_t*)buff, sizeof(buff), 100);
+		 		data_Reception = '\0';
+		}
 	 }
-		 data_Reception = '\0';
+
   }
 
     /* USER CODE END WHILE */
@@ -284,8 +313,8 @@ static void MX_DCMI_Init(void)
   hdcmi.Instance = DCMI;
   hdcmi.Init.SynchroMode = DCMI_SYNCHRO_HARDWARE;
   hdcmi.Init.PCKPolarity = DCMI_PCKPOLARITY_RISING;
-  hdcmi.Init.VSPolarity = DCMI_VSPOLARITY_LOW;
-  hdcmi.Init.HSPolarity = DCMI_HSPOLARITY_HIGH;
+  hdcmi.Init.VSPolarity = DCMI_VSPOLARITY_HIGH;
+  hdcmi.Init.HSPolarity = DCMI_HSPOLARITY_LOW;
   hdcmi.Init.CaptureRate = DCMI_CR_ALL_FRAME;
   hdcmi.Init.ExtendedDataMode = DCMI_EXTEND_DATA_8B;
   hdcmi.Init.JPEGMode = DCMI_JPEG_DISABLE;
@@ -439,8 +468,12 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
   /* DMA2_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);

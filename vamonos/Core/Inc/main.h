@@ -57,12 +57,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Cam_DATA4_Pin GPIO_PIN_4
-#define Cam_DATA4_GPIO_Port GPIOE
-#define Cam_DATA6_Pin GPIO_PIN_5
-#define Cam_DATA6_GPIO_Port GPIOE
-#define Cam_DATA7_Pin GPIO_PIN_6
-#define Cam_DATA7_GPIO_Port GPIOE
 #define USER_Btn_Pin GPIO_PIN_13
 #define USER_Btn_GPIO_Port GPIOC
 #define SDA_pin_Pin GPIO_PIN_0
@@ -75,10 +69,6 @@ void Error_Handler(void);
 #define RMII_REF_CLK_GPIO_Port GPIOA
 #define RMII_MDIO_Pin GPIO_PIN_2
 #define RMII_MDIO_GPIO_Port GPIOA
-#define HSYNC_Pin GPIO_PIN_4
-#define HSYNC_GPIO_Port GPIOA
-#define PCLK_Pin GPIO_PIN_6
-#define PCLK_GPIO_Port GPIOA
 #define RMII_CRS_DV_Pin GPIO_PIN_7
 #define RMII_CRS_DV_GPIO_Port GPIOA
 #define RMII_RXD0_Pin GPIO_PIN_4
@@ -99,12 +89,6 @@ void Error_Handler(void);
 #define USB_PowerSwitchOn_GPIO_Port GPIOG
 #define USB_OverCurrent_Pin GPIO_PIN_7
 #define USB_OverCurrent_GPIO_Port GPIOG
-#define Cam_DATA0_Pin GPIO_PIN_6
-#define Cam_DATA0_GPIO_Port GPIOC
-#define Cam_DATA1_Pin GPIO_PIN_7
-#define Cam_DATA1_GPIO_Port GPIOC
-#define Cam_DATA2_Pin GPIO_PIN_8
-#define Cam_DATA2_GPIO_Port GPIOC
 #define USB_SOF_Pin GPIO_PIN_8
 #define USB_SOF_GPIO_Port GPIOA
 #define USB_VBUS_Pin GPIO_PIN_9
@@ -119,10 +103,6 @@ void Error_Handler(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
-#define Cam_DATA5_Pin GPIO_PIN_3
-#define Cam_DATA5_GPIO_Port GPIOD
-#define VSYNC_Pin GPIO_PIN_9
-#define VSYNC_GPIO_Port GPIOG
 #define RMII_TX_EN_Pin GPIO_PIN_11
 #define RMII_TX_EN_GPIO_Port GPIOG
 #define RMII_TXD0_Pin GPIO_PIN_13
@@ -131,8 +111,6 @@ void Error_Handler(void);
 #define SW0_GPIO_Port GPIOB
 #define LD2_Pin GPIO_PIN_7
 #define LD2_GPIO_Port GPIOB
-#define Cam_DATA3_Pin GPIO_PIN_1
-#define Cam_DATA3_GPIO_Port GPIOE
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
