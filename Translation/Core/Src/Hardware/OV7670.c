@@ -584,12 +584,12 @@ void OV7670_getImageInfo(uint16_t *width, uint16_t *height, uint8_t *format)
 	*format=img_format;
 }
 
-void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
-{
-	if(capture_mode==CONTINUOUS)
-		HAL_DMA_Start_IT(hdcmi->DMA_Handle, (uint32_t)&hdcmi->Instance->DR, img_address, img_width * img_height/2);
-
-}
+//void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
+//{
+//	if(capture_mode==CONTINUOUS)
+//		HAL_DMA_Start_IT(hdcmi->DMA_Handle, (uint32_t)&hdcmi->Instance->DR, img_address, img_width * img_height/2);
+//
+//}
 
 /*void HAL_DCMI_VsyncEventCallback(DCMI_HandleTypeDef *hdcmi)
 {}*/

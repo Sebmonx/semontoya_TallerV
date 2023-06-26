@@ -21,7 +21,14 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+//Hardware
+#include "OV7670.h"
 
+#include "color_conversion.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,27 +54,96 @@ I2C_HandleTypeDef hi2c2;
 
 LPTIM_HandleTypeDef hlptim1;
 
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim4;
+
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
+char uart_Buffer[64];
+uint8_t uart_Recieve;
+uint8_t conteo_Frames = 0;
+
+uint8_t DMA_complete_flag = 0;
+uint8_t DCMI_Frame_Flag = 0;
+uint32_t image_data[352*144/4] = {0}; //max resolution is CIF
+
+Camera_settings OV7670_settings={
+		QVGA, 		//Resolution
+		YUV422, 	//Format
+		NORMAL, 	//Effect
+		ON,			//AEC
+		ON, 		//AGC
+		ON, 		//AWB
+		OFF,		//Color bar
+		OFF,		//vertical flip
+		OFF,		//Horizontal flip
+		OFF,		//Night mode
+		OFF,		//ASC
+		ON,			//De-noise
+		ON,			//Banding filter
+		HISTOGRAM,	//AEC algorithm
+		QUARTER_FPS,//Min. fps in night mode
+		F_AUTO,		//Auto detect banding freq.
+		256, 		//Exposure - 2 bytes
+		4, 			//Gain	[0-7]=[1-128]
+		160,		//Brightness - byte
+		64, 		//Contrast - byte
+		80, 		//Saturation - byte
+		2,			//Sharpness	- [0-31]
+		0,			//De-noise strength - byte
+		x16, 		//Gain ceiling
+		77, 		//R channel gain - byte
+		103, 		//G channel gain - byte
+		153			//B channel gain - byte
+};
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART3_UART_Init(void);
-static void MX_LPTIM1_Init(void);
-static void MX_DCMI_Init(void);
 static void MX_DMA_Init(void);
+static void MX_DCMI_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_LPTIM1_Init(void);
+static void MX_TIM2_Init(void);
+static void MX_USART3_UART_Init(void);
+static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
-
+//void TransferComplete(DMA_HandleTypeDef *DmaHandle);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	if(htim == &htim2){
+		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+	}
+}
 
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
+	if(htim == &htim4){
+		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_3);
+	}
+}
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+	HAL_UART_Receive_IT(&huart3, &uart_Recieve, 1);
+}
+
+/* No funciona */
+//void TransferComplete(DMA_HandleTypeDef *DmaHandle){
+//	DMA_complete_flag = DMA_complete_flag + 1;
+//}
+
+void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi){
+	DMA_complete_flag = 2;
+}
+
+/* No funciona */
+//void DMA_XferCpltCallback(DMA_HandleTypeDef *hdcmi_hdma){
+//	DMA_complete_flag = DMA_complete_flag + 3;
+//}
 /* USER CODE END 0 */
 
 /**
@@ -104,19 +180,108 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART3_UART_Init();
-  MX_LPTIM1_Init();
-  MX_DCMI_Init();
   MX_DMA_Init();
+  MX_DCMI_Init();
   MX_I2C2_Init();
+  MX_LPTIM1_Init();
+  MX_TIM2_Init();
+  MX_USART3_UART_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
+
+
+//  HAL_DMA_RegisterCallback(&hdma_dcmi, HAL_DMA_XFER_CPLT_CB_ID, TransferComplete);
+  // Inicialización de timer LED
+  HAL_TIM_Base_Start_IT(&htim2);
+
+  // Inicialización de USART para comunicación
+  HAL_UART_Receive_IT(&huart3, &uart_Recieve, 1);
+
+
+  // Apaga cámara
+  OV7670_Power(DISABLE);
+
+  /* Funcion que relaciona los perifericos usados con los punteros
+  	  creados en el driver */
+  OV7670_Init(&hdcmi, &hdma_dcmi, &hi2c2, &hlptim1);
+
+  /* Enciende el reloj que se le va a entregar a la cámara, retorna RST y PWDN
+   * a los estados de funcionamiento y realiza un soft reset de los registros
+   * en la cámara*/
+  OV7670_PowerUp();
+
+  sprintf(uart_Buffer, "Camara configurada\n");
+  HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+
+  /* Realiza configuraciones personalizadas en la cámara, ajustes de fotografía,
+   * resolución y funcionamiento */
+  OV7670_UpdateSettings(OV7670_settings);
+  OV7670_SetFrameRate(XCLK_DIV(1), PLL_x4);
+  HAL_Delay(10);
+
+  /* */
+//  OV7670_Start(SNAPSHOT, image_data);
+//  HAL_Delay(1000);
+
+
+
+  /* En teoría en este momento, image_data debería obtener la información de 1 frame */
+//  uint32_t image_Data_Full = 0;
+//  for(uint32_t i = 0; i < 352*144; i++){
+//	  if(image_data[i] == 0){
+//		  __NOP();
+//	  }
+//	  else {
+//		  image_Data_Full++;
+//	  }
+//  }
+
+//  OV7670_Stop();
+  /* Intento de enviar directamente cada dato por uart */
+
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  sprintf(uart_Buffer, "Presione 's' para iniciar la captura.\n");
+  HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+
   while (1)
   {
+	 if(uart_Recieve != '\0'){
+		 if(uart_Recieve == 's' && conteo_Frames < 200){
+
+			 // Iniciar captura
+			 OV7670_Start(SNAPSHOT, image_data);
+
+			 // Esperar que llegue el frame completo
+			 while(DCMI_Frame_Flag == 0 && HAL_DMA_GetState(&hdma_dcmi) != HAL_DMA_STATE_READY);
+
+			 // Detener captura DCMI cuando el DMA termine
+			 OV7670_Stop();
+
+			 /* Transmitir imagen por serial USART */
+			 for(uint32_t i = 0; i < 352*144; i++){
+				  for(int j = 3; j >= 0; j--){
+					 uint8_t var = ((image_data[i] >> (8*j)) & 0xFF);
+					 HAL_UART_Transmit(&huart3, &var, 1, 100);
+				  }
+			 }
+
+			 sprintf(uart_Buffer, "\nFrame enviado.\n");
+			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+
+			 // Controlador para evaluar cuándo el sistema realizó 200 fotos
+			 conteo_Frames++;
+			 // Inicio de PWM que gira un paso el motor
+			 HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_3);
+
+			 sprintf(uart_Buffer, "\nGiro motor.\n");
+			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+
+		 }
+	 }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -295,6 +460,110 @@ static void MX_LPTIM1_Init(void)
 }
 
 /**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 21600-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 2500 - 1 ;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV2;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 21600 -1;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 2;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV2;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 1;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+  HAL_TIM_MspPostInit(&htim4);
+
+}
+
+/**
   * @brief USART3 Initialization Function
   * @param None
   * @retval None
@@ -340,7 +609,7 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA2_Stream1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
 
 }
@@ -365,13 +634,23 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_14, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : LD1_Pin LD3_Pin LD2_Pin */
-  GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|LD2_Pin;
+  /*Configure GPIO pin : LD1_Pin */
+  GPIO_InitStruct.Pin = LD1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(LD1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LD3_Pin LD2_Pin */
+  GPIO_InitStruct.Pin = LD3_Pin|LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
