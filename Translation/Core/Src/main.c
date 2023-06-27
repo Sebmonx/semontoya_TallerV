@@ -67,13 +67,13 @@ uint8_t conteo_Frames = 0;
 uint8_t PWM_flag = 0;
 uint8_t DMA_complete_flag = 0;
 uint8_t DCMI_Frame_Flag = 0;
-uint32_t image_data[352*144/4] = {0}; //max resolution is CIF
+uint32_t image_data[176 * 144/2] = {0}; //max resolution is CIF
 
 Camera_settings OV7670_settings={
-		QVGA, 		//Resolution
+		QQCIF, 		//Resolution
 		YUV422, 	//Format
-		NORMAL, 	//Effect
-		ON,			//AEC
+		BW, 	//Effect
+		ON,		//AEC
 		ON, 		//AGC
 		ON, 		//AWB
 		OFF,		//Color bar
@@ -275,23 +275,23 @@ int main(void)
 			 OV7670_Stop();
 
 			 /* Transmitir imagen por serial USART */
-			 for(uint32_t i = 0; i < 352*144; i++){
-				  for(int j = 3; j >= 0; j--){
+			 for(uint32_t i = 0; i <  176 * 144/2; i++){
+				  for(int j = 0; j <= 3; j++){
 					 uint8_t var = ((image_data[i] >> (8*j)) & 0xFF);
 					 HAL_UART_Transmit(&huart3, &var, 1, 100);
 				  }
 			 }
 
-			 sprintf(uart_Buffer, "\nFrame enviado.\n");
-			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+//			 sprintf(uart_Buffer, "\nFrame enviado.\n");
+//			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
 
 			 // Controlador para evaluar cuándo el sistema realizó 200 fotos
 			 conteo_Frames++;
 			 // Inicio de PWM que gira un paso el motor
 
 
-			 sprintf(uart_Buffer, "\nGiro motor.\n");
-			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+//			 sprintf(uart_Buffer, "\nGiro motor.\n");
+//			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
 
 			 uart_Recieve = '\0';
 
