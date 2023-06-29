@@ -65,6 +65,8 @@ void Error_Handler(void);
 #define LD1_GPIO_Port GPIOB
 #define LD3_Pin GPIO_PIN_14
 #define LD3_GPIO_Port GPIOB
+#define Led_captura_Pin GPIO_PIN_15
+#define Led_captura_GPIO_Port GPIOB
 #define STLK_RX_Pin GPIO_PIN_8
 #define STLK_RX_GPIO_Port GPIOD
 #define STLK_TX_Pin GPIO_PIN_9
@@ -73,10 +75,12 @@ void Error_Handler(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
+#define Led_Completado_Pin GPIO_PIN_10
+#define Led_Completado_GPIO_Port GPIOC
 #define LD2_Pin GPIO_PIN_7
 #define LD2_GPIO_Port GPIOB
-#define STEP_Pin GPIO_PIN_8
-#define STEP_GPIO_Port GPIOB
+#define Led_Estado_Pin GPIO_PIN_9
+#define Led_Estado_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

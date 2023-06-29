@@ -42,6 +42,10 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#define res_QVGA 320*240/2
+#define res_CIF 352*288/2
+#define res_QCIF 176*144/2
+#define res_QQCIF 88*72/2
 
 /* USER CODE END PM */
 
@@ -56,24 +60,27 @@ LPTIM_HandleTypeDef hlptim1;
 
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim14;
 
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-char uart_Buffer[64];
+char uart_Buffer[256];
 uint8_t uart_Recieve;
+
 uint8_t conteo_Frames = 0;
 uint8_t PWM_flag = 0;
 uint8_t DMA_complete_flag = 0;
 uint8_t DCMI_Frame_Flag = 0;
-uint32_t image_data[176 * 144/2] = {0}; //max resolution is CIF
+uint8_t capturando = 0;
+
+uint32_t image_data[res_CIF/2] = {0};
 
 Camera_settings OV7670_settings={
-		QQCIF, 		//Resolution
-		YUV422, 	//Format
-		BW, 	//Effect
-		ON,		//AEC
+		QCIF, 		//Resolution
+		RGB565,  	//Format
+		NORMAL, 	//Effect
+		ON,			//AEC
 		ON, 		//AGC
 		ON, 		//AWB
 		OFF,		//Color bar
@@ -110,10 +117,14 @@ static void MX_I2C2_Init(void);
 static void MX_LPTIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART3_UART_Init(void);
-static void MX_TIM4_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM14_Init(void);
 /* USER CODE BEGIN PFP */
 //void TransferComplete(DMA_HandleTypeDef *DmaHandle);
+void send_Image_UART(uint32_t* image_Data,uint32_t res_Size);
+void check_Frame(void);
+void send_Frame(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -121,22 +132,18 @@ static void MX_TIM3_Init(void);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim == &htim2){
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-	}
-	if(htim == &htim3){
-		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_9);
+		HAL_GPIO_TogglePin(Led_Estado_GPIO_Port, Led_Estado_Pin);
+
+		if(capturando == 1){
+			HAL_GPIO_TogglePin(Led_captura_GPIO_Port, Led_captura_Pin);
+		}
 	}
 }
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
-	if(htim == &htim4){
-		if(PWM_flag == 0){
-			PWM_flag = 1;
-		}
-		else if(PWM_flag == 1){
-			HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_3);
-			PWM_flag = 0;
-		}
-
+	if(htim == &htim14){
+		HAL_TIM_PWM_Stop(&htim14, TIM_CHANNEL_1);
+		 HAL_GPIO_WritePin(Led_Completado_GPIO_Port, Led_Completado_Pin, SET);
 	}
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
@@ -149,7 +156,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 //}
 
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi){
-	DMA_complete_flag = 2;
+	DMA_complete_flag = 1;
 }
 
 /* No funciona */
@@ -198,12 +205,10 @@ int main(void)
   MX_LPTIM1_Init();
   MX_TIM2_Init();
   MX_USART3_UART_Init();
-  MX_TIM4_Init();
   MX_TIM3_Init();
+  MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
 
-
-//  HAL_DMA_RegisterCallback(&hdma_dcmi, HAL_DMA_XFER_CPLT_CB_ID, TransferComplete);
   // Inicialización de timer LED
   HAL_TIM_Base_Start_IT(&htim2);
 
@@ -220,7 +225,7 @@ int main(void)
 
   /* Enciende el reloj que se le va a entregar a la cámara, retorna RST y PWDN
    * a los estados de funcionamiento y realiza un soft reset de los registros
-   * en la cámara*/
+   * en la cámara */
   OV7670_PowerUp();
 
   sprintf(uart_Buffer, "Camara configurada\n");
@@ -229,13 +234,8 @@ int main(void)
   /* Realiza configuraciones personalizadas en la cámara, ajustes de fotografía,
    * resolución y funcionamiento */
   OV7670_UpdateSettings(OV7670_settings);
-  OV7670_SetFrameRate(XCLK_DIV(1), PLL_x4);
+  OV7670_SetFrameRate(XCLK_DIV(1), PLL_x4); // Es posiblemente innecesario porque se va a capturar solo 1 frame cada vez
   HAL_Delay(10);
-
-  /* */
-//  OV7670_Start(SNAPSHOT, image_data);
-//  HAL_Delay(1000);
-
 
 
   /* En teoría en este momento, image_data debería obtener la información de 1 frame */
@@ -249,33 +249,37 @@ int main(void)
 //	  }
 //  }
 
-//  OV7670_Stop();
-  /* Intento de enviar directamente cada dato por uart */
-
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  sprintf(uart_Buffer, "Presione 's' para iniciar la captura.\n");
+
+  sprintf(uart_Buffer, "Cada que termina un frame, presione 's' después de guardar los datos.\n");
   HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+  sprintf(uart_Buffer, "Limpie la pantalla y presione 'i' para iniciar.\n");
+  HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+
 
   while (1)
   {
 	 if(uart_Recieve != '\0'){
-		 if(uart_Recieve == 's' && conteo_Frames < 200){
 
+		 if(uart_Recieve == 'i'){
+			 capturando = 1;
+		 }
+
+		 else if(uart_Recieve == 'a'){
 			 // Iniciar captura
 			 OV7670_Start(SNAPSHOT, image_data);
 
 			 // Esperar que llegue el frame completo
-			 while(DCMI_Frame_Flag == 0 && HAL_DMA_GetState(&hdma_dcmi) != HAL_DMA_STATE_READY);
+			 check_Frame();
 
 			 // Detener captura DCMI cuando el DMA termine
 			 OV7670_Stop();
 
 			 /* Transmitir imagen por serial USART */
-			 for(uint32_t i = 0; i <  176 * 144/2; i++){
+			 for(uint32_t i = 0; i <  res_QCIF/2; i++){
 				  for(int j = 0; j <= 3; j++){
 					 uint8_t var = ((image_data[i] >> (8*j)) & 0xFF);
 					 HAL_UART_Transmit(&huart3, &var, 1, 100);
@@ -287,24 +291,66 @@ int main(void)
 
 			 // Controlador para evaluar cuándo el sistema realizó 200 fotos
 			 conteo_Frames++;
-			 // Inicio de PWM que gira un paso el motor
 
+			 // Inicio de PWM que gira un paso el motor
+			 PWM_flag = 1;
+			 HAL_TIM_PWM_Start_IT(&htim14, TIM_CHANNEL_1);
 
 //			 sprintf(uart_Buffer, "\nGiro motor.\n");
 //			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
 
 			 uart_Recieve = '\0';
-
 		 }
-		 else if(uart_Recieve == 'a'){
-			 HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_3);
 
+		 else if(uart_Recieve == 'e'){
+			 sprintf(uart_Buffer, "0D0A");
+			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
 			 uart_Recieve = '\0';
 		 }
 		 else {
-
 			 uart_Recieve = '\0';
 		 }
+		 while(capturando == 1 && conteo_Frames < 200){
+			 send_Frame();
+		 }
+
+
+//		 while(capturando == 1 && conteo_Frames < 200){
+//
+//			 // Iniciar captura
+//			 OV7670_Start(SNAPSHOT, image_data);
+//
+//			 // Esperar que llegue el frame completo
+//			 check_Frame();
+//
+//			 // Detener captura DCMI cuando el DMA termine
+//			 OV7670_Stop();
+//
+//			 /* Transmitir imagen por serial USART */
+//			 for(uint32_t i = 0; i <  res_QCIF/2; i++){
+//				  for(int j = 0; j <= 3; j++){
+//					 uint8_t var = ((image_data[i] >> (8*j)) & 0xFF);
+//					 HAL_UART_Transmit(&huart3, &var, 1, 100);
+//				  }
+//			 }
+//
+////			 sprintf(uart_Buffer, "\nFrame enviado.\n");
+////			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+//
+//			 // Controlador para evaluar cuándo el sistema realizó 200 fotos
+//			 conteo_Frames++;
+//
+//			 // Inicio de PWM que gira un paso el motor
+//			 PWM_flag = 1;
+//			 HAL_TIM_PWM_Start_IT(&htim14, TIM_CHANNEL_1);
+//
+////			 sprintf(uart_Buffer, "\nGiro motor.\n");
+////			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+//
+//			 uart_Recieve = '\0';
+//
+//		 }
+
 	 }
     /* USER CODE END WHILE */
 
@@ -574,61 +620,48 @@ static void MX_TIM3_Init(void)
 }
 
 /**
-  * @brief TIM4 Initialization Function
+  * @brief TIM14 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_TIM4_Init(void)
+static void MX_TIM14_Init(void)
 {
 
-  /* USER CODE BEGIN TIM4_Init 0 */
+  /* USER CODE BEGIN TIM14_Init 0 */
 
-  /* USER CODE END TIM4_Init 0 */
+  /* USER CODE END TIM14_Init 0 */
 
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
-  /* USER CODE BEGIN TIM4_Init 1 */
+  /* USER CODE BEGIN TIM14_Init 1 */
 
-  /* USER CODE END TIM4_Init 1 */
-  htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 216 -1;
-  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 10000;
-  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV2;
-  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  /* USER CODE END TIM14_Init 1 */
+  htim14.Instance = TIM14;
+  htim14.Init.Prescaler = 216 -1;
+  htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim14.Init.Period = 10000;
+  htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
   {
     Error_Handler();
   }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  if (HAL_TIM_PWM_Init(&htim14) != HAL_OK)
   {
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 5000;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim14, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM4_Init 2 */
+  /* USER CODE BEGIN TIM14_Init 2 */
 
-  /* USER CODE END TIM4_Init 2 */
-  HAL_TIM_MspPostInit(&htim4);
+  /* USER CODE END TIM14_Init 2 */
+  HAL_TIM_MspPostInit(&htim14);
 
 }
 
@@ -706,10 +739,13 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LD3_Pin|LD2_Pin|GPIO_PIN_9, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LD3_Pin|Led_captura_Pin|LD2_Pin|Led_Estado_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_14, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(Led_Completado_GPIO_Port, Led_Completado_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : LD1_Pin */
   GPIO_InitStruct.Pin = LD1_Pin;
@@ -718,8 +754,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(LD1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD3_Pin LD2_Pin PB9 */
-  GPIO_InitStruct.Pin = LD3_Pin|LD2_Pin|GPIO_PIN_9;
+  /*Configure GPIO pins : LD3_Pin Led_captura_Pin LD2_Pin Led_Estado_Pin */
+  GPIO_InitStruct.Pin = LD3_Pin|Led_captura_Pin|LD2_Pin|Led_Estado_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -732,10 +768,81 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : Led_Completado_Pin */
+  GPIO_InitStruct.Pin = Led_Completado_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(Led_Completado_GPIO_Port, &GPIO_InitStruct);
+
 }
 
 /* USER CODE BEGIN 4 */
+void send_Image_UART(uint32_t* image_Data,uint32_t res_Size){
+	uint32_t dataAmount = res_Size;
+	for(uint32_t i = 0; i <  dataAmount; i++){
+		  for(int j = 0; j <= 3; j++){
+			 uint8_t var = ((image_Data[i] >> (8*j)) & 0xFF);
+			 HAL_UART_Transmit(&huart3, &var, 1, 100);
+		  }
+	 }
+}
 
+void check_Frame(void){
+	while(DCMI_Frame_Flag == 0 && HAL_DMA_GetState(&hdma_dcmi) != HAL_DMA_STATE_READY);
+	DCMI_Frame_Flag = 0;
+}
+
+void send_Frame(void){
+	 if(uart_Recieve == 's'){
+		 // Apagar pin de completado
+		 HAL_GPIO_WritePin(Led_Completado_GPIO_Port, Led_Completado_Pin, RESET);
+
+		 // Reinicio de bandera para chequear nuevo frame
+		 DCMI_Frame_Flag = 0;
+
+		 // Iniciar captura
+		 OV7670_Start(SNAPSHOT, image_data);
+
+		 // Esperar que llegue el frame completo
+		 check_Frame();
+
+		 // Detener captura DCMI cuando el DMA termine
+		 OV7670_Stop();
+
+		 /* Transmitir imagen por serial USART */
+		 for(uint32_t i = 0; i <  res_QCIF; i++){
+			  for(int j = 0; j <= 3; j++){
+				 uint8_t var = ((image_data[i] >> (8*j)) & 0xFF);
+				 HAL_UART_Transmit(&huart3, &var, 1, 100);
+			  }
+		 }
+
+//		 sprintf(uart_Buffer, "\nFrame enviado.\n");
+//		 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+
+		 // Controlador para evaluar cuándo el sistema realizó 200 fotos
+		 conteo_Frames++;
+
+		 // Inicio de PWM que gira un paso el motor
+		 PWM_flag = 1;
+		 HAL_TIM_PWM_Start_IT(&htim14, TIM_CHANNEL_1);
+
+//		sprintf(uart_Buffer, "\nGiro motor.\n");
+//		HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+
+		 // Control para evaluar cuándo el sistema realizó 200 fotos
+		 conteo_Frames++;
+		 uart_Recieve = '\0';
+	 }
+}
+
+
+/* No funciona creo */
+//void send_Serial_End(void){
+//	sprintf(uart_Buffer, "%X %X", 15, 15);
+//
+//}
 /* USER CODE END 4 */
 
 /**
