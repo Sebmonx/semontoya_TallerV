@@ -77,7 +77,7 @@ uint8_t capturando = 0;
 uint32_t image_data[res_CIF/2] = {0};
 
 Camera_settings OV7670_settings={
-		QCIF, 		//Resolution
+		CIF, 		//Resolution
 		RGB565,  	//Format
 		NORMAL, 	//Effect
 		ON,			//AEC
@@ -133,17 +133,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim == &htim2){
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		HAL_GPIO_TogglePin(Led_Estado_GPIO_Port, Led_Estado_Pin);
-
-		if(capturando == 1){
-			HAL_GPIO_TogglePin(Led_captura_GPIO_Port, Led_captura_Pin);
-		}
 	}
 }
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 	if(htim == &htim14){
 		HAL_TIM_PWM_Stop(&htim14, TIM_CHANNEL_1);
-		 HAL_GPIO_WritePin(Led_Completado_GPIO_Port, Led_Completado_Pin, SET);
+		HAL_GPIO_WritePin(Led_Completado_GPIO_Port, Led_Completado_Pin, SET);
 	}
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
@@ -268,45 +264,45 @@ int main(void)
 			 capturando = 1;
 		 }
 
-		 else if(uart_Recieve == 'a'){
-			 // Iniciar captura
-			 OV7670_Start(SNAPSHOT, image_data);
-
-			 // Esperar que llegue el frame completo
-			 check_Frame();
-
-			 // Detener captura DCMI cuando el DMA termine
-			 OV7670_Stop();
-
-			 /* Transmitir imagen por serial USART */
-			 for(uint32_t i = 0; i <  res_QCIF/2; i++){
-				  for(int j = 0; j <= 3; j++){
-					 uint8_t var = ((image_data[i] >> (8*j)) & 0xFF);
-					 HAL_UART_Transmit(&huart3, &var, 1, 100);
-				  }
-			 }
-
-//			 sprintf(uart_Buffer, "\nFrame enviado.\n");
+//		 else if(uart_Recieve == 'a'){
+//			 // Iniciar captura
+//			 OV7670_Start(SNAPSHOT, image_data);
+//
+//			 // Esperar que llegue el frame completo
+//			 check_Frame();
+//
+//			 // Detener captura DCMI cuando el DMA termine
+//			 OV7670_Stop();
+//
+//			 /* Transmitir imagen por serial USART */
+//			 for(uint32_t i = 0; i <  res_QCIF/2; i++){
+//				  for(int j = 0; j <= 3; j++){
+//					 uint8_t var = ((image_data[i] >> (8*j)) & 0xFF);
+//					 HAL_UART_Transmit(&huart3, &var, 1, 100);
+//				  }
+//			 }
+//
+////			 sprintf(uart_Buffer, "\nFrame enviado.\n");
+////			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+//
+//			 // Controlador para evaluar cuándo el sistema realizó 200 fotos
+//			 conteo_Frames++;
+//
+//			 // Inicio de PWM que gira un paso el motor
+//			 PWM_flag = 1;
+//			 HAL_TIM_PWM_Start_IT(&htim14, TIM_CHANNEL_1);
+//
+////			 sprintf(uart_Buffer, "\nGiro motor.\n");
+////			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
+//
+//			 uart_Recieve = '\0';
+//		 }
+//
+//		 else if(uart_Recieve == 'e'){
+//			 sprintf(uart_Buffer, "0D0A");
 //			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
-
-			 // Controlador para evaluar cuándo el sistema realizó 200 fotos
-			 conteo_Frames++;
-
-			 // Inicio de PWM que gira un paso el motor
-			 PWM_flag = 1;
-			 HAL_TIM_PWM_Start_IT(&htim14, TIM_CHANNEL_1);
-
-//			 sprintf(uart_Buffer, "\nGiro motor.\n");
-//			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
-
-			 uart_Recieve = '\0';
-		 }
-
-		 else if(uart_Recieve == 'e'){
-			 sprintf(uart_Buffer, "0D0A");
-			 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
-			 uart_Recieve = '\0';
-		 }
+//			 uart_Recieve = '\0';
+//		 }
 		 else {
 			 uart_Recieve = '\0';
 		 }
@@ -794,7 +790,7 @@ void check_Frame(void){
 }
 
 void send_Frame(void){
-	 if(uart_Recieve == 's'){
+	 if(uart_Recieve == 's' || uart_Recieve == 'i'){
 		 // Apagar pin de completado
 		 HAL_GPIO_WritePin(Led_Completado_GPIO_Port, Led_Completado_Pin, RESET);
 
@@ -811,7 +807,7 @@ void send_Frame(void){
 		 OV7670_Stop();
 
 		 /* Transmitir imagen por serial USART */
-		 for(uint32_t i = 0; i <  res_QCIF; i++){
+		for(uint32_t i = 0; i <  res_CIF; i++){
 			  for(int j = 0; j <= 3; j++){
 				 uint8_t var = ((image_data[i] >> (8*j)) & 0xFF);
 				 HAL_UART_Transmit(&huart3, &var, 1, 100);
@@ -821,8 +817,6 @@ void send_Frame(void){
 //		 sprintf(uart_Buffer, "\nFrame enviado.\n");
 //		 HAL_UART_Transmit(&huart3, (uint8_t*) uart_Buffer, strlen(uart_Buffer), 100);
 
-		 // Controlador para evaluar cuándo el sistema realizó 200 fotos
-		 conteo_Frames++;
 
 		 // Inicio de PWM que gira un paso el motor
 		 PWM_flag = 1;
@@ -833,7 +827,12 @@ void send_Frame(void){
 
 		 // Control para evaluar cuándo el sistema realizó 200 fotos
 		 conteo_Frames++;
-		 uart_Recieve = '\0';
+
+		if(conteo_Frames == 5){
+			uart_Recieve = '\0';
+			capturando = 0;
+			conteo_Frames = 0;
+		}
 	 }
 }
 
